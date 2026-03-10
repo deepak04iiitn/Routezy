@@ -137,6 +137,9 @@ export default function OnboardingScreen({ onFinish }) {
       {/* Bottom sheet — swipe gestures forwarded to FlatList via PanResponder */}
       <View style={styles.whitePanel} {...panResponder.panHandlers}>
         <View style={styles.textArea}>
+          <Text style={styles.slideIndex}>
+            {String(currentIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+          </Text>
           <Text style={styles.titleLight}>{slide.titleLight}</Text>
           <Text style={styles.titleBold}>{slide.titleBold}</Text>
           <Text style={styles.description}>{slide.description}</Text>
@@ -155,7 +158,7 @@ export default function OnboardingScreen({ onFinish }) {
           </View>
 
           {isLast ? (
-            <TouchableOpacity onPress={onFinish} activeOpacity={0.85}>
+            <TouchableOpacity onPress={onFinish} activeOpacity={0.85} style={styles.ctaTouch}>
               <LinearGradient
                 colors={[CORAL, TANGERINE, AMBER]}
                 style={styles.ctaBtn}
@@ -166,7 +169,7 @@ export default function OnboardingScreen({ onFinish }) {
               </LinearGradient>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={goNext} activeOpacity={0.85}>
+            <TouchableOpacity onPress={goNext} activeOpacity={0.85} style={styles.ctaTouch}>
               <LinearGradient
                 colors={[CORAL, TANGERINE]}
                 style={styles.ctaBtn}
@@ -212,7 +215,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 28,
-    paddingTop: 28,
+    paddingTop: 26,
     paddingBottom: 24,
     justifyContent: 'space-between',
     shadowColor: '#000',
@@ -222,26 +225,41 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
 
-  textArea: {},
-  titleLight: {
-    fontSize: 19,
+  textArea: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  slideIndex: {
+    fontSize: 11,
+    color: '#9CA7B5',
+    letterSpacing: 1.2,
     fontWeight: '700',
-    color: NAVY_MID,
-    letterSpacing: 1.1,
+    marginBottom: 10,
+  },
+  titleLight: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#5A6B82',
+    letterSpacing: 0.9,
+    textAlign: 'center',
   },
   titleBold: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
     color: CORAL,
-    letterSpacing: 1.3,
-    marginTop: 2,
-    marginBottom: 14,
+    letterSpacing: 0.9,
+    marginTop: 4,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   description: {
     fontSize: 14.5,
-    lineHeight: 22.5,
+    lineHeight: 23,
     color: INK_MID,
-    maxWidth: '92%',
+    textAlign: 'center',
+    maxWidth: width * 0.78,
+    minHeight: 92,
   },
 
   /* ── Controls row — inside the white panel ── */
@@ -249,14 +267,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#EEF2F6',
+    paddingTop: 16,
   },
   skipBtn: {
-    minWidth: 44,
+    minWidth: 56,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F6F8FB',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   skipText: {
     fontSize: 14,
     color: INK_SOFT,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   dotsRow: {
     flexDirection: 'row',
@@ -276,15 +302,21 @@ const styles = StyleSheet.create({
     backgroundColor: AMBER,
   },
   ctaBtn: {
-    borderRadius: 24,
-    paddingVertical: 11,
-    paddingHorizontal: 20,
+    borderRadius: 14,
+    minWidth: 108,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 6,
+  },
+  ctaTouch: {
+    borderRadius: 14,
+    overflow: 'hidden',
   },
   ctaText: {
     color: '#FFFFFF',
     fontWeight: '800',
-    fontSize: 13,
-    letterSpacing: 0.9,
+    fontSize: 12.5,
+    letterSpacing: 1.1,
   },
 });
