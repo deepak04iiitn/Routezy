@@ -2,6 +2,17 @@ import User from '../models/User.js';
 import { signAuthToken } from '../utils/jwt.js';
 import { validateSigninPayload, validateSignupPayload } from '../utils/validators.js';
 
+function generateUsernameFromEmail(email) {
+  const localPart = (email.split('@')[0] || 'traveler')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 18);
+  const suffix = Math.random().toString(36).slice(2, 7);
+  const base = localPart.length >= 2 ? localPart : 'traveler';
+
+  return `${base}${suffix}`.slice(0, 32);
+}
+
 function publicUser(userDoc) {
   return {
     id: userDoc._id.toString(),
@@ -24,7 +35,11 @@ export async function signup(req, res, next) {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
 
-    const user = await User.create(value);
+    const generatedUsername = generateUsernameFromEmail(value.email);
+    const user = await User.create({
+      ...value,
+      username: generatedUsername,
+    });
     const token = signAuthToken(user._id.toString());
 
     return res.status(201).json({

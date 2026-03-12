@@ -21,7 +21,6 @@ const NAVY = '#0F2044';
 const APP_LOGO = require('../assets/TripZo_Logo.png');
 
 export default function RegisterScreen({ onRegister, onGoLogin }) {
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
@@ -29,15 +28,15 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const submit = async () => {
-    if (!username.trim() || !email.trim() || !password) {
-      setError('Please complete all fields.');
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.');
       return;
     }
 
     setError('');
     setIsLoading(true);
     try {
-      await onRegister({ username, email, password });
+      await onRegister({ email, password });
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -63,14 +62,6 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
             <Text style={styles.subtitle}>Start planning faster, smarter, and more beautiful trips.</Text>
 
             <View style={styles.card}>
-              <Text style={styles.label}>Username</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Traveler name"
-                autoCapitalize="words"
-                value={username}
-                onChangeText={setUsername}
-              />
               <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
