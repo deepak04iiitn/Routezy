@@ -23,8 +23,29 @@ function publicUser(userDoc) {
     id: userDoc._id.toString(),
     username: userDoc.username,
     email: userDoc.email,
+    role: userDoc.role || 'user',
     createdAt: userDoc.createdAt,
   };
+}
+
+function getAdminEmails() {
+  return (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function resolveRoleForEmail(email, currentRole = 'user') {
+  if (currentRole === 'admin') {
+    return 'admin';
+  }
+
+  const adminEmails = getAdminEmails();
+  if (adminEmails.includes(email.toLowerCase())) {
+    return 'admin';
+  }
+
+  return 'user';
 }
 
 export async function signup(req, res, next) {
@@ -45,6 +66,7 @@ export async function signup(req, res, next) {
       ...value,
       username: generatedUsername,
       authProvider: 'local',
+      role: resolveRoleForEmail(value.email),
     });
     const token = signAuthToken(user._id.toString());
 
@@ -80,6 +102,12 @@ export async function signin(req, res, next) {
     const isValidPassword = await user.comparePassword(value.password);
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const desiredRole = resolveRoleForEmail(user.email, user.role || 'user');
+    if (user.role !== desiredRole) {
+      user.role = desiredRole;
+      await user.save();
     }
 
     const token = signAuthToken(user._id.toString());
@@ -126,6 +154,7 @@ export async function googleAuth(req, res, next) {
         username: generatedUsername,
         authProvider: 'google',
         firebaseUid,
+        role: resolveRoleForEmail(email),
       });
     } else {
       let needsSave = false;
@@ -137,6 +166,12 @@ export async function googleAuth(req, res, next) {
 
       if (user.authProvider !== 'google') {
         user.authProvider = 'google';
+        needsSave = true;
+      }
+
+      const desiredRole = resolveRoleForEmail(email, user.role);
+      if (user.role !== desiredRole) {
+        user.role = desiredRole;
         needsSave = true;
       }
 
