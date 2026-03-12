@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// import * as Google from 'expo-auth-session/providers/google';
+// import * as WebBrowser from 'expo-web-browser';
+// import { GoogleAuthProvider, signInWithCredential, signOut } from 'firebase/auth';
 import SplashScreen from './screens/SplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -13,6 +16,9 @@ import {
   saveSession,
 } from './src/services/auth/sessionStorage';
 import { setAuthToken } from './src/services/api/client';
+// import { firebaseAuth } from './src/services/auth/firebaseClient';
+
+// WebBrowser.maybeCompleteAuthSession();
 
 const SCREEN = {
   LOADING: 'loading',
@@ -26,6 +32,13 @@ const SCREEN = {
 export default function App() {
   const [screen, setScreen] = useState(SCREEN.LOADING);
   const [user, setUser] = useState(null);
+  // const [googleRequest, _googleResponse, promptGoogleSignIn] = Google.useAuthRequest({
+  //   expoClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
+  //   androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  //   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  //   webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  //   scopes: ['profile', 'email'],
+  // });
 
   useEffect(() => {
     let isMounted = true;
@@ -96,6 +109,32 @@ export default function App() {
     await persistAuth(response);
   };
 
+  // const handleGoogleAuth = async () => {
+  //   if (!googleRequest) {
+  //     throw new Error('Google sign-in is not configured. Add Google client IDs to your Expo env.');
+  //   }
+  //
+  //   const authResult = await promptGoogleSignIn();
+  //   if (authResult.type !== 'success') {
+  //     throw new Error('Google sign-in was cancelled.');
+  //   }
+  //
+  //   const googleIdToken = authResult.authentication?.idToken || authResult.params?.id_token;
+  //   const accessToken = authResult.authentication?.accessToken;
+  //
+  //   if (!googleIdToken && !accessToken) {
+  //     throw new Error('Unable to obtain Google credentials.');
+  //   }
+  //
+  //   const credential = GoogleAuthProvider.credential(googleIdToken || null, accessToken);
+  //   const firebaseSession = await signInWithCredential(firebaseAuth, credential);
+  //   const firebaseIdToken = await firebaseSession.user.getIdToken(true);
+  //   await signOut(firebaseAuth);
+  //
+  //   const response = await googleAuth(firebaseIdToken);
+  //   await persistAuth(response);
+  // };
+
   const handleLogout = async () => {
     await clearSession();
     setAuthToken(null);
@@ -121,7 +160,11 @@ export default function App() {
 
   if (screen === SCREEN.AUTH_LOGIN) {
     return (
-      <LoginScreen onLogin={handleLogin} onGoRegister={() => setScreen(SCREEN.AUTH_REGISTER)} />
+      <LoginScreen
+        onLogin={handleLogin}
+        // onGoogleLogin={handleGoogleAuth}
+        onGoRegister={() => setScreen(SCREEN.AUTH_REGISTER)}
+      />
     );
   }
 
@@ -129,6 +172,7 @@ export default function App() {
     return (
       <RegisterScreen
         onRegister={handleRegister}
+        // onGoogleRegister={handleGoogleAuth}
         onGoLogin={() => setScreen(SCREEN.AUTH_LOGIN)}
       />
     );

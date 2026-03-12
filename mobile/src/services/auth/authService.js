@@ -22,6 +22,15 @@ export async function signin(payload) {
   }
 }
 
+export async function googleAuth(idToken) {
+  try {
+    const response = await apiClient.post('/api/auth/google', { idToken });
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Google authentication failed. Please try again.'));
+  }
+}
+
 export async function getMe() {
   try {
     const response = await apiClient.get('/api/auth/me');

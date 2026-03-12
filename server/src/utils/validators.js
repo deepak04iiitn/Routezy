@@ -35,3 +35,14 @@ export function validateSigninPayload(payload) {
   return { errors, value: { email, password } };
 }
 
+export function validateGoogleAuthPayload(payload) {
+  const errors = [];
+  const idToken = payload?.idToken?.trim();
+
+  if (!idToken) {
+    errors.push('Google id token is required.');
+  }
+
+  return { errors, value: { idToken } };
+}
+

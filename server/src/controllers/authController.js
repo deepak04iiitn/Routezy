@@ -1,6 +1,11 @@
 import User from '../models/User.js';
 import { signAuthToken } from '../utils/jwt.js';
-import { validateSigninPayload, validateSignupPayload } from '../utils/validators.js';
+import { getFirebaseAdminAuth } from '../config/firebaseAdmin.js';
+import {
+  validateGoogleAuthPayload,
+  validateSigninPayload,
+  validateSignupPayload,
+} from '../utils/validators.js';
 
 function generateUsernameFromEmail(email) {
   const localPart = (email.split('@')[0] || 'traveler')
@@ -39,6 +44,7 @@ export async function signup(req, res, next) {
     const user = await User.create({
       ...value,
       username: generatedUsername,
+      authProvider: 'local',
     });
     const token = signAuthToken(user._id.toString());
 
@@ -65,6 +71,12 @@ export async function signin(req, res, next) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
+    if (user.authProvider === 'google') {
+      return res.status(400).json({
+        message: 'This account uses Google sign-in. Please continue with Google.',
+      });
+    }
+
     const isValidPassword = await user.comparePassword(value.password);
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid email or password.' });
@@ -78,6 +90,72 @@ export async function signin(req, res, next) {
       user: publicUser(user),
     });
   } catch (error) {
+    return next(error);
+  }
+}
+
+export async function googleAuth(req, res, next) {
+  try {
+    const { errors, value } = validateGoogleAuthPayload(req.body);
+
+    if (errors.length) {
+      return res.status(400).json({ message: errors[0], errors });
+    }
+
+    const firebaseAuth = getFirebaseAdminAuth();
+    const decodedToken = await firebaseAuth.verifyIdToken(value.idToken);
+    const email = decodedToken?.email?.trim().toLowerCase();
+    const firebaseUid = decodedToken?.uid;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Google account does not include an email.' });
+    }
+
+    if (!firebaseUid) {
+      return res.status(400).json({ message: 'Invalid Google token payload.' });
+    }
+
+    let user = await User.findOne({
+      $or: [{ firebaseUid }, { email }],
+    }).select('+password');
+
+    if (!user) {
+      const generatedUsername = generateUsernameFromEmail(email);
+      user = await User.create({
+        email,
+        username: generatedUsername,
+        authProvider: 'google',
+        firebaseUid,
+      });
+    } else {
+      let needsSave = false;
+
+      if (!user.firebaseUid) {
+        user.firebaseUid = firebaseUid;
+        needsSave = true;
+      }
+
+      if (user.authProvider !== 'google') {
+        user.authProvider = 'google';
+        needsSave = true;
+      }
+
+      if (needsSave) {
+        await user.save();
+      }
+    }
+
+    const token = signAuthToken(user._id.toString());
+
+    return res.json({
+      message: 'Google authentication successful.',
+      token,
+      user: publicUser(user),
+    });
+  } catch (error) {
+    if (error?.code === 'auth/id-token-expired' || error?.code === 'auth/argument-error') {
+      return res.status(401).json({ message: 'Google token is invalid or expired.' });
+    }
     return next(error);
   }
 }
