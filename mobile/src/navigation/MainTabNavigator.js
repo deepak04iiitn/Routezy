@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -8,13 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
+const APP_LOGO = require('../../assets/Logo.png');
 
 const TAB_META = {
   Home: { label: 'Home', icon: 'home-outline', activeIcon: 'home' },
@@ -26,12 +28,15 @@ const TAB_META = {
 
 function PlaceholderTabScreen({ title, subtitle, accent = '#FF6B6B' }) {
   return (
-    <SafeAreaView style={styles.screenSafe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.screenSafe} edges={['left', 'right']}>
       <View style={styles.screenContent}>
-        <View style={styles.placeholderCard}>
-          <View style={[styles.placeholderDot, { backgroundColor: accent }]} />
-          <Text style={styles.placeholderTitle}>{title}</Text>
-          <Text style={styles.placeholderSubtitle}>{subtitle}</Text>
+        <ScreenTopBar activeRoute={title} />
+        <View style={styles.screenBody}>
+          <View style={styles.placeholderCard}>
+            <View style={[styles.placeholderDot, { backgroundColor: accent }]} />
+            <Text style={styles.placeholderTitle}>{title}</Text>
+            <Text style={styles.placeholderSubtitle}>{subtitle}</Text>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -40,18 +45,51 @@ function PlaceholderTabScreen({ title, subtitle, accent = '#FF6B6B' }) {
 
 function AccountScreen({ user, onLogout }) {
   return (
-    <SafeAreaView style={styles.screenSafe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.screenSafe} edges={['left', 'right']}>
       <View style={styles.screenContent}>
-        <View style={styles.placeholderCard}>
-          <View style={[styles.placeholderDot, { backgroundColor: '#8B5CF6' }]} />
-          <Text style={styles.placeholderTitle}>Account</Text>
-          <Text style={styles.placeholderSubtitle}>{user?.email || 'Signed in user'}</Text>
-          <Pressable style={styles.logoutButton} onPress={onLogout}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </Pressable>
+        <ScreenTopBar activeRoute="Account" />
+        <View style={styles.screenBody}>
+          <View style={styles.placeholderCard}>
+            <View style={[styles.placeholderDot, { backgroundColor: '#8B5CF6' }]} />
+            <Text style={styles.placeholderTitle}>Account</Text>
+            <Text style={styles.placeholderSubtitle}>{user?.email || 'Signed in user'}</Text>
+            <Pressable style={styles.logoutButton} onPress={onLogout}>
+              <Text style={styles.logoutText}>Logout</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </SafeAreaView>
+  );
+}
+
+function ScreenTopBar({ activeRoute }) {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const isHome = activeRoute === 'Home';
+
+  const onBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    if (!isHome) {
+      navigation.navigate('Home');
+    }
+  };
+
+  return (
+    <View style={[styles.topBarShell, { paddingTop: insets.top + 2 }]}>
+      <View style={styles.topBarInner}>
+        <Pressable
+          onPress={onBackPress}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed, isHome && styles.backButtonDisabled]}
+        >
+          <Ionicons name="chevron-back" size={22} color={isHome ? '#C7CFDA' : '#0F2044'} />
+        </Pressable>
+        <Image source={APP_LOGO} style={styles.topBarLogo} resizeMode="contain" />
+      </View>
+    </View>
   );
 }
 
@@ -236,12 +274,58 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 0,
     paddingBottom: 112,
   },
+  topBarShell: {
+    backgroundColor: '#FFFFFF',
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF2F7',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  topBarInner: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingLeft: 20,
+    paddingRight: 0,
+  },
+  screenBody: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  backButtonPressed: {
+    opacity: 0.8,
+  },
+  backButtonDisabled: {
+    backgroundColor: '#F2F5FA',
+  },
+  topBarLogo: {
+    width: 122,
+    height: 38,
+    marginRight: -20,
+  },
   placeholderCard: {
-    marginTop: 18,
+    marginTop: 16,
     borderRadius: 22,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 22,
