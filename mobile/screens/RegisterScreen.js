@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 const LIGHT = {
   primary: '#ff6b6b',
@@ -94,8 +95,18 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
                   end={{ x: 1, y: 1 }}
                   style={[styles.hero, { borderRadius: responsiveStyles.heroRadius }]}
                 >
-                  <View style={styles.heroWave} />
+                  <View style={styles.heroWaveContainer} pointerEvents="none">
+                    <Svg width="100%" height={58} viewBox="0 0 100 60" preserveAspectRatio="none">
+                      <Path
+                        d="M0 60 L0 34 C 18 8, 34 8, 50 28 C 66 48, 82 48, 100 22 L100 60 Z"
+                        fill={palette.surface}
+                      />
+                    </Svg>
+                  </View>
                   <View style={styles.heroTextWrap}>
+                    <View style={styles.heroOverlayIcon}>
+                      <Ionicons name="person-add-outline" size={64} color="rgba(255,255,255,0.45)" />
+                    </View>
                     <Text style={styles.heroTitle}>Create your account</Text>
                     <Text style={styles.heroSubtitle}>Start your journey with us today</Text>
                   </View>
@@ -177,15 +188,15 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
                   <Text style={styles.buttonText}>{isLoading ? 'Creating...' : 'Sign Up'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-            </View>
 
-            <View style={styles.footer}>
-              <Text style={[styles.link, { color: palette.muted }]}>
-                Already have an account?
-                <Text style={[styles.linkAccent, { color: palette.primary }]} onPress={onGoLogin}>
-                  {' '}Login
+              <View style={styles.footer}>
+                <Text style={[styles.link, { color: palette.muted }]}>
+                  Already have an account?
+                  <Text style={[styles.linkAccent, { color: palette.primary }]} onPress={onGoLogin}>
+                    {' '}Login
+                  </Text>
                 </Text>
-              </Text>
+              </View>
             </View>
 
             <View style={styles.brandFoot}>
@@ -207,7 +218,7 @@ const styles = StyleSheet.create({
   },
   root: {
     width: '100%',
-    maxWidth: 430,
+    maxWidth: 480,
     minHeight: '100%',
     alignSelf: 'center',
     flex: 1,
@@ -224,18 +235,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  heroWave: {
+  heroWaveContainer: {
     position: 'absolute',
-    left: -80,
-    right: -80,
-    bottom: -96,
-    height: 170,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    left: 0,
+    right: 0,
+    bottom: -1,
   },
   heroTextWrap: {
     paddingHorizontal: 32,
-    paddingVertical: 30,
+    paddingTop: 24,
+    paddingBottom: 78,
+    zIndex: 2,
+  },
+  heroOverlayIcon: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
   heroTitle: {
     color: '#FFFFFF',
@@ -251,17 +265,19 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingTop: 22,
+    paddingBottom: 12,
   },
   fieldGroup: {
-    marginBottom: 22,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     paddingBottom: 8,
-    marginLeft: 4,
+    paddingHorizontal: 4,
   },
   inputWrap: {
     position: 'relative',
@@ -273,48 +289,41 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   input: {
-    height: 64,
-    borderRadius: 16,
+    height: 56,
+    borderRadius: 12,
     borderWidth: 1,
-    paddingLeft: 46,
-    paddingRight: 48,
-    fontSize: 18,
+    paddingLeft: 42,
+    paddingRight: 44,
+    fontSize: 16,
   },
   rightIconButton: {
     position: 'absolute',
-    right: 14,
+    right: 12,
     padding: 6,
   },
   buttonWrap: {
-    marginTop: 14,
-    borderRadius: 16,
+    marginTop: 10,
+    borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#ff6b6b',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
-    elevation: 4,
   },
   button: {
-    height: 64,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonDisabled: { opacity: 0.75 },
   buttonText: {
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 20,
+    fontWeight: '800',
+    fontSize: 16,
   },
   error: {
     color: '#DC2626',
     fontSize: 13,
-    marginTop: -6,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   footer: {
-    marginTop: 6,
-    paddingHorizontal: 24,
+    marginTop: 12,
     alignItems: 'center',
   },
   link: {
@@ -326,7 +335,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   brandFoot: {
-    marginTop: 'auto',
+    marginTop: 20,
     padding: 24,
     alignItems: 'center',
   },

@@ -14,11 +14,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 
 const LIGHT = {
   primary: '#ff6b6b',
   secondary: '#ffb347',
   background: '#f8f9fc',
+  darkBackground: '#230f0f',
   surface: '#ffffff',
   text: '#0f2044',
   muted: '#64748b',
@@ -30,6 +32,7 @@ const DARK = {
   primary: '#ff6b6b',
   secondary: '#ffb347',
   background: '#230f0f',
+  darkBackground: '#230f0f',
   surface: '#1f1a1a',
   text: '#e2e8f0',
   muted: '#a1a1aa',
@@ -72,7 +75,10 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: scheme === 'dark' ? palette.darkBackground : palette.background }]}
+      edges={['top', 'bottom', 'left', 'right']}
+    >
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -80,24 +86,34 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.root}>
-            <View style={[styles.heroWrap, { paddingHorizontal: responsiveStyles.heroPaddingHorizontal }]}>
-              <LinearGradient
-                colors={[palette.primary, palette.secondary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.hero, { borderRadius: responsiveStyles.heroRadius }]}
-              >
-                <View style={styles.heroOverlayIcon}>
-                  <Ionicons name="earth-outline" size={92} color="rgba(255,255,255,0.45)" />
-                </View>
-                <View style={styles.heroContent}>
-                  <Text style={styles.heroTitle}>Welcome back!</Text>
-                  <Text style={styles.heroSubtitle}>Plan your next adventure with TripZo</Text>
-                </View>
-              </LinearGradient>
+          <View style={[styles.root, { backgroundColor: palette.surface }]}>
+            <View style={styles.heroContainer}>
+              <View style={[styles.heroWrap, { paddingHorizontal: responsiveStyles.heroPaddingHorizontal }]}>
+                <LinearGradient
+                  colors={[palette.primary, palette.secondary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.hero, { borderRadius: responsiveStyles.heroRadius }]}
+                >
+                  <View style={styles.heroWaveContainer} pointerEvents="none">
+                    <Svg width="100%" height={58} viewBox="0 0 100 60" preserveAspectRatio="none">
+                      <Path
+                        d="M0 60 L0 34 C 18 8, 34 8, 50 28 C 66 48, 82 48, 100 22 L100 60 Z"
+                        fill={palette.surface}
+                      />
+                    </Svg>
+                  </View>
+                  <View style={styles.heroContent}>
+                    <View style={styles.heroOverlayIcon}>
+                      <Ionicons name="earth-outline" size={92} color="rgba(255,255,255,0.45)" />
+                    </View>
+                    <Text style={styles.heroTitle}>Welcome back!</Text>
+                    <Text style={styles.heroSubtitle}>Plan your next adventure with TripZo</Text>
+                  </View>
+                </LinearGradient>
+              </View>
             </View>
-
+            
             <View style={styles.formWrap}>
               <View style={styles.fieldGroup}>
                 <Text style={[styles.label, { color: palette.text }]}>Email</Text>
@@ -199,30 +215,33 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     alignSelf: 'center',
   },
+  heroContainer: {
+    width: '100%',
+  },
   heroWrap: {
     paddingTop: 0,
-    paddingBottom: 12,
+    paddingBottom: 0,
   },
   hero: {
-    minHeight: 260,
+    minHeight: 280,
     overflow: 'hidden',
     justifyContent: 'flex-end',
-    shadowColor: '#ff6b6b',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 4,
   },
-  heroOverlayIcon: {
+  heroWaveContainer: {
     position: 'absolute',
-    top: 28,
     left: 0,
     right: 0,
+    bottom: -1,
+  },
+  heroOverlayIcon: {
     alignItems: 'center',
+    marginBottom: 8,
   },
   heroContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 22,
+    paddingHorizontal: 32,
+    paddingTop: 24,
+    paddingBottom: 78,
+    zIndex: 2,
   },
   heroTitle: {
     color: '#FFFFFF',
