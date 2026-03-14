@@ -20,7 +20,7 @@
 | | [6.3 Route Optimization](#63-route-optimization) |
 | | [6.4 Map Visualization](#64-map-visualization) |
 | | [6.5 Restaurant Recommendations](#65-restaurant-recommendations) |
-| | [6.6 Nearby ATM Suggestions](#66-nearby-atm-suggestions) |
+| | [6.6 Nearby ATM and Washroom Suggestions](#66-nearby-atm-and-washroom-suggestions) |
 | | [6.7 Trip Progress Mode](#67-trip-progress-mode) |
 | | [6.8 Traveler Notes and Reviews](#68-traveler-notes-and-reviews) |
 | | [6.9 Private Notes](#69-private-notes) |
@@ -46,7 +46,7 @@ TripZo is a **smart travel planning mobile application** that helps users plan a
 | **Live Trip Progress** | Real-time tracking with mark-visited, skip-location, and auto route recalculation features. |
 | **Shareable Itineraries** | One-tap link sharing so travel companions can import and sync any trip plan instantly. |
 | **Community Tips** | Real traveler notes and upvoted insights surface authentic, up-to-date local knowledge. |
-| **ATM Finder** | Shows nearby ATMs with bank name and walking distance so you are never caught without cash. |
+| **ATM and Washroom Finder** | Shows nearby ATMs and public washrooms with walking distance so essentials are always within reach. |
 
 ---
 
@@ -59,7 +59,7 @@ Travelers planning trips face consistent, unsolved frustrations. Current tools a
 | 🔴 **Unoptimized Routes** | Attractions visited in random order cause exhausting back-and-forth travel across the city. |
 | 🟠 **Generic Recommendations** | Travel blogs offer one-size-fits-all lists with no adaptation to real-time location or schedule. |
 | 🟣 **No Smart Scheduling** | Existing planners ignore visit durations, opening hours, and real distances between places. |
-| 🔵 **Missing Essentials** | Finding restaurants, ATMs, and services mid-trip is disruptive and ruins the flow of travel. |
+| 🔵 **Missing Essentials** | Finding restaurants, ATMs, washrooms, and services mid-trip is disruptive and ruins the flow of travel. |
 | 🟢 **Missed Attractions** | Poor planning causes travelers to run out of time or skip key destinations entirely. |
 
 ---
@@ -99,7 +99,7 @@ Travelers planning trips face consistent, unsolved frustrations. Current tools a
 | 📅 **Smart Multi-Day Planning** | Automatically distributes attractions across days keeping each day geographically compact and time-balanced. |
 | 🌍 **Discover More Places** | Surface hidden gems and community-vetted tips that go far beyond standard tourist guides and travel blogs. |
 | 🤝 **Community Intelligence** | Real traveler notes and upvoted tips provide authentic, seasonally-relevant, up-to-date local insights. |
-| 📲 **All-in-One Companion** | Maps, restaurants, ATMs, and progress tracking — everything a traveler needs in a single seamless app. |
+| 📲 **All-in-One Companion** | Maps, restaurants, ATMs, washrooms, and progress tracking — everything a traveler needs in a single seamless app. |
 | 🔗 **Instant Trip Sharing** | One-tap shareable links let travel companions sync plans or import complete itineraries instantly. |
 
 ---
@@ -157,7 +157,7 @@ Calculates the optimal visiting order for all selected attractions, cutting unne
 ### 6.4 Map Visualization
 
 - Interactive map with all itinerary stops plotted and connected by route lines
-- Color-coded markers: Attractions (coral pin), Restaurants (fork), ATMs (bank icon)
+- Color-coded markers: Attractions (coral pin), Restaurants (fork), ATMs (bank icon), Washrooms (restroom icon)
 - Real-time blue dot showing the user's current GPS position
 - Tap any marker to see attraction details, hours, and estimated visit time
 
@@ -168,6 +168,7 @@ Calculates the optimal visiting order for all selected attractions, cutting unne
 | 📍 | Attraction | Coral `#FF6B6B` |
 | 🍴 | Restaurant | Amber `#FFC947` |
 | 🏧 | ATM | Sky Blue `#0EA5E9` |
+| 🚻 | Washroom | Teal `#14B8A6` |
 | 🔵 | Current Location | Navy `#0F2044` |
 
 ---
@@ -187,10 +188,10 @@ Calculates the optimal visiting order for all selected attractions, cutting unne
 
 ---
 
-### 6.6 Nearby ATM Suggestions
+### 6.6 Nearby ATM and Washroom Suggestions
 
-- Displays ATM name, bank, and walking distance near each attraction
-- Example: SBI ATM at 200m with tap-to-navigate walking directions
+- Displays ATM name, washroom availability, and walking distance near each attraction
+- Example: SBI ATM at 200m and a public washroom at 350m with tap-to-navigate walking directions
 - Updated automatically based on current GPS location during the trip
 
 ---
@@ -285,7 +286,7 @@ TripZo is built on a modern, scalable stack optimized for mobile performance, re
 | **Backend** | Node.js + Express.js | RESTful API server handling itinerary generation, route optimization, user management, and data persistence. Stateless design enables horizontal scaling. |
 | **Database** | MongoDB | Document-oriented NoSQL store for user profiles, itineraries, traveler notes, and tips. Flexible schema accommodates dynamic itinerary structures without migrations. |
 | **Auth** | Firebase Auth | Google Sign-In via Firebase Authentication. Handles OAuth token management, session persistence, and secure credential storage on-device. |
-| **Maps** | Google Maps Platform | Maps SDK for visualization, Places API for attraction and restaurant data, Distance Matrix API for travel times, Directions API for route rendering. |
+| **Maps** | Google Maps Platform | Maps SDK for visualization, Places API for attraction/restaurant/ATM data, Distance Matrix API for travel times, Directions API for route rendering. |
 
 ---
 
@@ -294,9 +295,235 @@ TripZo is built on a modern, scalable stack optimized for mobile performance, re
 | API | Purpose | Endpoint |
 |---|---|---|
 | **Maps SDK** | Render interactive map with markers and route polylines | Maps SDK iOS/Android |
-| **Places API** | Fetch nearby attractions, restaurants, and ATMs by type and radius | `/place/nearbysearch/json` |
+| **Places API** | Fetch nearby attractions, restaurants, ATMs, and washroom-relevant place types by type and radius | `/place/nearbysearch/json` |
 | **Distance Matrix** | Calculate real travel time and distance between all location pairs | `/distancematrix/json` |
 | **Directions API** | Render turn-by-turn route polyline on the map canvas | `/directions/json` |
+
+---
+
+### Open-Source / No-API-Key Implementation Directive (Primary)
+
+> **AI + Engineering Instruction:** Keep the Google Maps integration details above for reference, but for actual implementation use the replacement stack below completely as the default runtime path.
+
+TripZo will support a full no-key/open-source mapping and place-intelligence pipeline for app implementation.
+
+#### 1) Live User Location (Replacement)
+
+Use **Expo Location**
+
+- Package: `expo-location`
+
+Install:
+
+```
+npx expo install expo-location
+```
+
+Example:
+
+```js
+import * as Location from "expo-location";
+
+const getLocation = async () => {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== "granted") return;
+
+  const location = await Location.getCurrentPositionAsync({});
+  console.log(location.coords.latitude);
+  console.log(location.coords.longitude);
+};
+```
+
+You get:
+
+- `latitude`
+- `longitude`
+- `accuracy`
+- `altitude`
+
+You can also track live movement:
+
+```js
+Location.watchPositionAsync(
+  {
+    accuracy: Location.Accuracy.High,
+    distanceInterval: 10,
+  },
+  (location) => {
+    console.log(location.coords);
+  }
+);
+```
+
+Works with Expo.
+
+#### 2) Map Rendering
+
+Use:
+
+- `react-native-maps`
+
+Install:
+
+```
+npx expo install react-native-maps
+```
+
+Supports:
+
+- markers
+- polylines
+- user location
+- custom map styles
+
+#### 3) Location Autocomplete (Free Replacement)
+
+Use **Photon API**
+
+API:
+
+```
+https://photon.komoot.io/api/?q=London
+```
+
+Example:
+
+```js
+const searchPlaces = async (query) => {
+  const res = await fetch(`https://photon.komoot.io/api/?q=${query}&limit=5`);
+  const data = await res.json();
+
+  return data.features.map((place) => ({
+    name: place.properties.name,
+    latitude: place.geometry.coordinates[1],
+    longitude: place.geometry.coordinates[0],
+  }));
+};
+```
+
+- Free
+- No API key
+- Rate limited, but acceptable for most app use cases
+
+#### 4) Directions (Route Between Two Points)
+
+Use **OSRM API**
+
+Example:
+
+```
+https://router.project-osrm.org/route/v1/driving/77.2090,28.6139;72.8777,19.0760?overview=full
+```
+
+Returns:
+
+- route geometry
+- distance
+- duration
+
+Then draw route:
+
+```js
+import { Polyline } from "react-native-maps";
+
+<Polyline coordinates={routeCoords} strokeWidth={4} />;
+```
+
+#### 5) Distance Matrix Replacement
+
+Use **OSRM Table API**
+
+Example:
+
+```
+https://router.project-osrm.org/table/v1/driving/13.388860,52.517037;13.397634,52.529407
+```
+
+Returns:
+
+- distance
+- duration
+
+#### 6) Nearby Places (Restaurants / ATMs / Washrooms)
+
+Use **Overpass API (OpenStreetMap)** as the free replacement for Nearby Search.
+
+Endpoint:
+
+```
+https://overpass-api.de/api/interpreter
+```
+
+Restaurant query body:
+
+```
+[out:json];
+node["amenity"="restaurant"](around:1000,28.6139,77.2090);
+out;
+```
+
+ATM query body:
+
+```
+[out:json];
+node["amenity"="atm"](around:1000,28.6139,77.2090);
+out;
+```
+
+Washroom query body:
+
+```
+[out:json];
+node["amenity"="toilets"](around:1000,28.6139,77.2090);
+out;
+```
+
+Example fetch:
+
+```js
+const getRestaurants = async (lat, lon) => {
+  const query = `
+  [out:json];
+  node["amenity"="restaurant"](around:1000,${lat},${lon});
+  out;
+  `;
+
+  const res = await fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: query,
+  });
+
+  const data = await res.json();
+  return data.elements;
+};
+```
+
+#### Complete Free Stack for TripZo
+
+| Feature | Tool |
+| --- | --- |
+| Map | react-native-maps |
+| User location | expo-location |
+| Autocomplete | Photon API |
+| Directions | OSRM |
+| Distance matrix | OSRM Table API |
+| Restaurants/ATMs/Washrooms nearby | Overpass API |
+
+#### Reference Architecture Flow
+
+User opens map
+      ↓
+expo-location -> get user GPS
+      ↓
+react-native-maps -> show map
+      ↓
+Photon API -> search places
+      ↓
+Overpass API -> nearby restaurants/ATMs/washrooms
+      ↓
+OSRM -> generate route
+      ↓
+Polyline -> draw route
 
 ---
 

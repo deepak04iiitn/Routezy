@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import authRoutes from './routes/authRoutes.js';
+import tripRoutes from './routes/tripRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -15,6 +16,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/trips', tripRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

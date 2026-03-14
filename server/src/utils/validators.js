@@ -110,3 +110,94 @@ export function validateForgotPasswordResetPayload(payload) {
   return { errors, value: { email, securityAnswer, newPassword } };
 }
 
+function validateLocationInput(location, fieldName, errors) {
+  const selected = location?.selected;
+  const hasSelectedCoordinates =
+    Number.isFinite(selected?.latitude) && Number.isFinite(selected?.longitude);
+  const hasDirectCoordinates =
+    Number.isFinite(location?.latitude) && Number.isFinite(location?.longitude);
+  const hasText = Boolean(location?.text?.trim());
+
+  if (!hasSelectedCoordinates && !hasDirectCoordinates && !hasText) {
+    errors.push(`${fieldName} location is required.`);
+  }
+}
+
+export function validateItineraryGenerationPayload(payload) {
+  const errors = [];
+  const budget = payload?.budget;
+  const fromLocation = payload?.fromLocation || {};
+  const startDate = payload?.startDate;
+  const endDate = payload?.endDate;
+
+  validateLocationInput(fromLocation, 'From', errors);
+
+  if (!['$', '$$', '$$$'].includes(budget)) {
+    errors.push('Budget must be one of $, $$, or $$$.');
+  }
+
+  if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    errors.push('Start date is required in YYYY-MM-DD format.');
+  }
+
+  if (!endDate || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    errors.push('End date is required in YYYY-MM-DD format.');
+  }
+
+  if (startDate && endDate && startDate > endDate) {
+    errors.push('End date must be on or after start date.');
+  }
+
+  return {
+    errors,
+    value: {
+      fromLocation,
+      startDate,
+      endDate,
+      budget,
+    },
+  };
+}
+
+export function validateTripCreationPayload(payload) {
+  const errors = [];
+  const requiredFields = ['title', 'createdAtIso', 'startDate', 'endDate', 'durationDays', 'budget', 'from', 'optimization', 'stats', 'days'];
+
+  requiredFields.forEach((field) => {
+    if (payload?.[field] === undefined || payload?.[field] === null) {
+      errors.push(`Missing required field: ${field}.`);
+    }
+  });
+
+  if (payload?.budget && !['$', '$$', '$$$'].includes(payload.budget)) {
+    errors.push('Budget must be one of $, $$, or $$$.');
+  }
+
+  if (payload?.startDate && payload?.endDate && payload.startDate > payload.endDate) {
+    errors.push('End date must be on or after start date.');
+  }
+
+  if (!Array.isArray(payload?.days)) {
+    errors.push('Days must be an array.');
+  }
+
+  return {
+    errors,
+    value: payload,
+  };
+}
+
+export function validateTripStatusPayload(payload) {
+  const errors = [];
+  const status = payload?.status;
+
+  if (!['planned', 'ongoing', 'upcoming', 'completed'].includes(status)) {
+    errors.push('Status must be one of planned, ongoing, upcoming, or completed.');
+  }
+
+  return {
+    errors,
+    value: { status },
+  };
+}
+
