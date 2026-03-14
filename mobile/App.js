@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 // import * as Google from 'expo-auth-session/providers/google';
 // import * as WebBrowser from 'expo-web-browser';
 // import { GoogleAuthProvider, signInWithCredential, signOut } from 'firebase/auth';
@@ -227,34 +228,30 @@ export default function App() {
     };
   }, [screen, user?.id]);
 
+  let content = (
+    <MainTabNavigator user={user} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />
+  );
+
   if (screen === SCREEN.LOADING) {
-    return (
+    content = (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF6B6B" />
       </View>
     );
-  }
-
-  if (screen === SCREEN.SPLASH) {
-    return <SplashScreen onDone={finishSplash} />;
-  }
-
-  if (screen === SCREEN.ONBOARDING) {
-    return <OnboardingScreen onFinish={handleOnboardingFinish} />;
-  }
-
-  if (screen === SCREEN.AUTH_LOGIN) {
-    return (
+  } else if (screen === SCREEN.SPLASH) {
+    content = <SplashScreen onDone={finishSplash} />;
+  } else if (screen === SCREEN.ONBOARDING) {
+    content = <OnboardingScreen onFinish={handleOnboardingFinish} />;
+  } else if (screen === SCREEN.AUTH_LOGIN) {
+    content = (
       <LoginScreen
         onLogin={handleLogin}
         // onGoogleLogin={handleGoogleAuth}
         onGoRegister={() => setScreen(SCREEN.AUTH_REGISTER)}
       />
     );
-  }
-
-  if (screen === SCREEN.AUTH_REGISTER) {
-    return (
+  } else if (screen === SCREEN.AUTH_REGISTER) {
+    content = (
       <RegisterScreen
         onRegister={handleRegister}
         // onGoogleRegister={handleGoogleAuth}
@@ -264,7 +261,10 @@ export default function App() {
   }
 
   return (
-    <MainTabNavigator user={user} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />
+    <>
+      <StatusBar style="dark" hidden={false} />
+      {content}
+    </>
   );
 }
 

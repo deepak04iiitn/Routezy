@@ -8,7 +8,6 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,21 +27,8 @@ const LIGHT = {
   muted: '#64748B',
 };
 
-const DARK = {
-  primary: '#ff6b6b',
-  amber: '#f59e0b',
-  navy: '#e2e8f0',
-  background: '#230f0f',
-  darkBackground: '#230f0f',
-  surface: '#1f1a1a',
-  inputBorder: '#334155',
-  inputBg: '#1e293b',
-  muted: '#94A3B8',
-};
-
 export default function RegisterScreen({ onRegister, onGoLogin }) {
-  const scheme = useColorScheme();
-  const palette = scheme === 'dark' ? DARK : LIGHT;
+  const palette = LIGHT;
   const { width } = useWindowDimensions();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,7 +62,7 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
 
   return (
     <SafeAreaView
-      style={[styles.safe, { backgroundColor: scheme === 'dark' ? palette.darkBackground : palette.background }]}
+      style={[styles.safe, { backgroundColor: palette.background }]}
       edges={['top', 'bottom', 'left', 'right']}
     >
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

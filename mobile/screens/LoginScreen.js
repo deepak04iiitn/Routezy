@@ -7,7 +7,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  useColorScheme,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -32,21 +31,8 @@ const LIGHT = {
   inputBg: '#ffffff',
 };
 
-const DARK = {
-  primary: '#ff6b6b',
-  secondary: '#ffb347',
-  background: '#230f0f',
-  darkBackground: '#230f0f',
-  surface: '#1f1a1a',
-  text: '#e2e8f0',
-  muted: '#a1a1aa',
-  border: 'rgba(255, 107, 107, 0.35)',
-  inputBg: '#2a2424',
-};
-
 export default function LoginScreen({ onLogin, onGoRegister }) {
-  const scheme = useColorScheme();
-  const palette = scheme === 'dark' ? DARK : LIGHT;
+  const palette = LIGHT;
   const { width } = useWindowDimensions();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -133,7 +119,7 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
 
   return (
     <SafeAreaView
-      style={[styles.safe, { backgroundColor: scheme === 'dark' ? palette.darkBackground : palette.background }]}
+      style={[styles.safe, { backgroundColor: palette.background }]}
       edges={['top', 'bottom', 'left', 'right']}
     >
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
