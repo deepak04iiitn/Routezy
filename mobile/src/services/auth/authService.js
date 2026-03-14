@@ -40,3 +40,63 @@ export async function getMe() {
   }
 }
 
+export async function updateProfile(payload) {
+  try {
+    const response = await apiClient.put('/api/auth/profile', payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Failed to update profile.'));
+  }
+}
+
+export async function uploadProfileImage(fileUri) {
+  try {
+    const fileName = fileUri.split('/').pop() || `profile-${Date.now()}.jpg`;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+
+    const formData = new FormData();
+    formData.append('image', {
+      uri: fileUri,
+      name: fileName,
+      type: mimeType,
+    });
+
+    const response = await apiClient.post('/api/auth/profile/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Failed to upload profile image.'));
+  }
+}
+
+export async function deleteAccount() {
+  try {
+    const response = await apiClient.delete('/api/auth/account');
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Failed to delete account.'));
+  }
+}
+
+export async function getForgotPasswordQuestion(email) {
+  try {
+    const response = await apiClient.post('/api/auth/forgot-password/question', { email });
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Unable to fetch security question.'));
+  }
+}
+
+export async function resetPasswordWithSecurityAnswer(payload) {
+  try {
+    const response = await apiClient.post('/api/auth/forgot-password/reset', payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Unable to reset password.'));
+  }
+}
+

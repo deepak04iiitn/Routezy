@@ -41,6 +41,34 @@ const userSchema = new mongoose.Schema(
       default: 'user',
       index: true,
     },
+    fullName: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: '',
+    },
+    profileImageUrl: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    profileImagePath: {
+      type: String,
+      trim: true,
+      default: '',
+      select: false,
+    },
+    securityQuestion: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+      default: '',
+    },
+    securityAnswerHash: {
+      type: String,
+      select: false,
+      default: '',
+    },
   },
   {
     timestamps: true,
@@ -60,6 +88,22 @@ userSchema.methods.comparePassword = async function comparePassword(candidatePas
     return false;
   }
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+userSchema.methods.setSecurityAnswer = async function setSecurityAnswer(answer) {
+  if (!answer) {
+    this.securityAnswerHash = '';
+    return;
+  }
+
+  this.securityAnswerHash = await bcrypt.hash(answer.trim().toLowerCase(), 12);
+};
+
+userSchema.methods.compareSecurityAnswer = async function compareSecurityAnswer(candidateAnswer) {
+  if (!this.securityAnswerHash) {
+    return false;
+  }
+  return bcrypt.compare(candidateAnswer.trim().toLowerCase(), this.securityAnswerHash);
 };
 
 const User = mongoose.model('User', userSchema);

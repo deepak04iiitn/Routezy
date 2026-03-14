@@ -15,6 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import {
+  getForgotPasswordQuestion,
+  resetPasswordWithSecurityAnswer,
+} from '../src/services/auth/authService';
 
 const LIGHT = {
   primary: '#ff6b6b',
@@ -49,6 +53,14 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotQuestion, setForgotQuestion] = useState('');
+  const [forgotAnswer, setForgotAnswer] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isForgotFlowVisible, setIsForgotFlowVisible] = useState(false);
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
 
   const responsiveStyles = useMemo(() => {
     return {
@@ -71,6 +83,51 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
       setError(submitError.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const requestSecurityQuestion = async () => {
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your email.');
+      return;
+    }
+
+    setForgotError('');
+    setForgotSuccess('');
+    setIsForgotLoading(true);
+    try {
+      const response = await getForgotPasswordQuestion(forgotEmail.trim());
+      setForgotQuestion(response.securityQuestion || '');
+    } catch (forgotFlowError) {
+      setForgotError(forgotFlowError.message);
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!forgotAnswer.trim() || !newPassword) {
+      setForgotError('Please provide both the security answer and a new password.');
+      return;
+    }
+
+    setForgotError('');
+    setForgotSuccess('');
+    setIsForgotLoading(true);
+    try {
+      await resetPasswordWithSecurityAnswer({
+        email: forgotEmail.trim(),
+        securityAnswer: forgotAnswer.trim(),
+        newPassword,
+      });
+      setForgotSuccess('Password updated. You can now login with the new password.');
+      setForgotAnswer('');
+      setNewPassword('');
+      setForgotQuestion('');
+    } catch (forgotFlowError) {
+      setForgotError(forgotFlowError.message);
+    } finally {
+      setIsForgotLoading(false);
     }
   };
 
@@ -134,7 +191,14 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
               <View style={styles.fieldGroup}>
                 <View style={styles.passwordRow}>
                   <Text style={[styles.label, { color: palette.text }]}>Password</Text>
-                  <TouchableOpacity activeOpacity={0.8}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setIsForgotFlowVisible((prev) => !prev);
+                      setForgotError('');
+                      setForgotSuccess('');
+                    }}
+                  >
                     <Text style={[styles.forgotText, { color: palette.primary }]}>Forgot Password?</Text>
                   </TouchableOpacity>
                 </View>
@@ -163,6 +227,70 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
               </View>
 
               {!!error && <Text style={styles.error}>{error}</Text>}
+
+              {isForgotFlowVisible && (
+                <View style={[styles.forgotFlowCard, { borderColor: palette.border, backgroundColor: palette.inputBg }]}>
+                  <Text style={[styles.forgotFlowTitle, { color: palette.text }]}>Recover Password</Text>
+
+                  <Text style={[styles.forgotFlowLabel, { color: palette.text }]}>Email</Text>
+                  <TextInput
+                    style={[styles.input, styles.forgotFlowInput, { color: palette.text, borderColor: palette.border, backgroundColor: palette.inputBg }]}
+                    placeholder="yourname@email.com"
+                    placeholderTextColor="#94A3B8"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    value={forgotEmail}
+                    onChangeText={setForgotEmail}
+                  />
+
+                  {!forgotQuestion ? (
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      style={[styles.forgotButton, { backgroundColor: palette.primary }]}
+                      onPress={requestSecurityQuestion}
+                      disabled={isForgotLoading}
+                    >
+                      <Text style={styles.forgotButtonText}>{isForgotLoading ? 'Loading...' : 'Get Security Question'}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <>
+                      <Text style={[styles.forgotFlowLabel, styles.forgotQuestionLabel, { color: palette.text }]}>Security Question</Text>
+                      <Text style={[styles.forgotQuestionText, { color: palette.muted }]}>{forgotQuestion}</Text>
+
+                      <Text style={[styles.forgotFlowLabel, { color: palette.text }]}>Security Answer</Text>
+                      <TextInput
+                        style={[styles.input, styles.forgotFlowInput, { color: palette.text, borderColor: palette.border, backgroundColor: palette.inputBg }]}
+                        placeholder="Enter answer"
+                        placeholderTextColor="#94A3B8"
+                        value={forgotAnswer}
+                        onChangeText={setForgotAnswer}
+                      />
+
+                      <Text style={[styles.forgotFlowLabel, { color: palette.text }]}>New Password</Text>
+                      <TextInput
+                        style={[styles.input, styles.forgotFlowInput, { color: palette.text, borderColor: palette.border, backgroundColor: palette.inputBg }]}
+                        placeholder="At least 8 chars with letters & numbers"
+                        placeholderTextColor="#94A3B8"
+                        secureTextEntry
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                      />
+
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        style={[styles.forgotButton, { backgroundColor: palette.primary }]}
+                        onPress={resetPassword}
+                        disabled={isForgotLoading}
+                      >
+                        <Text style={styles.forgotButtonText}>{isForgotLoading ? 'Updating...' : 'Reset Password'}</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                  {!!forgotError && <Text style={styles.forgotError}>{forgotError}</Text>}
+                  {!!forgotSuccess && <Text style={styles.forgotSuccess}>{forgotSuccess}</Text>}
+                </View>
+              )}
 
               <TouchableOpacity
                 style={[styles.buttonWrap, isLoading && styles.buttonDisabled]}
@@ -299,6 +427,61 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  forgotFlowCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  forgotFlowTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  forgotFlowLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 6,
+    marginLeft: 2,
+  },
+  forgotQuestionLabel: {
+    marginTop: 8,
+  },
+  forgotFlowInput: {
+    height: 48,
+    marginBottom: 10,
+    paddingLeft: 14,
+    paddingRight: 14,
+  },
+  forgotQuestionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  forgotButton: {
+    height: 46,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  forgotButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  forgotError: {
+    marginTop: 8,
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  forgotSuccess: {
+    marginTop: 8,
+    color: '#16A34A',
+    fontSize: 12,
     fontWeight: '600',
   },
   buttonWrap: {

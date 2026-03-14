@@ -8,7 +8,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
-import { getMe, signin, signup } from './src/services/auth/authService';
+import { deleteAccount as requestDeleteAccount, getMe, signin, signup } from './src/services/auth/authService';
 import {
   clearSession,
   isOnboardingDone,
@@ -143,6 +143,11 @@ export default function App() {
     setScreen(SCREEN.AUTH_LOGIN);
   };
 
+  const handleDeleteAccount = async () => {
+    await requestDeleteAccount();
+    await handleLogout();
+  };
+
   if (screen === SCREEN.LOADING) {
     return (
       <View style={styles.loadingContainer}>
@@ -180,7 +185,7 @@ export default function App() {
   }
 
   return (
-    <MainTabNavigator user={user} onLogout={handleLogout} />
+    <MainTabNavigator user={user} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />
   );
 }
 
