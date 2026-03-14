@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,6 +10,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -20,7 +21,7 @@ import ScreenTopBar from '../../navigation/components/ScreenTopBar';
 import { getMe, updateProfile } from '../../services/auth/authService';
 import { requestLiveLocation } from '../../services/maps/locationService';
 import { searchPhotonPlaces, getPlaceCoords, reverseGeocodeWithPhoton } from '../../services/maps/googleGeocodingService';
-import { generateSmartItinerary, saveTrip } from '../../services/itinerary/itineraryService';
+import { generateSmartItinerary, listTrips, saveTrip } from '../../services/itinerary/itineraryService';
 
 const POPULAR_DESTINATIONS = [
   {
@@ -39,13 +40,6 @@ const POPULAR_DESTINATIONS = [
       'https://lh3.googleusercontent.com/aida-public/AB6AXuDba27gnA7Q3fV5pmsqTe73igsqv3QpihDjlqAwuRlPhO_pgAZL_R83iyvk980iHNPeHIdgekw1AoldSfRPyPHiYvUXsrua3IZ_gC5qeY5QWNqH53j4lYdypsqcVw2bZcSTbqIWecArS4abzzKOK0xL8Ipnwyi3DsgJRIakjsgEn923d3xiJKsAe37CWLZsdzGXMZOW6O6LYip-QCBhvVNYY35n5LGwJkOvESk3352Q0AVM1WSU2TNBukX53fW_MILjQ0q47QEABp8W',
     liked: false,
   },
-];
-
-const QUICK_ACTIONS = [
-  { id: 'weekend', label: 'Weekend', icon: 'partly-sunny-outline', tint: '#0EA5E9' },
-  { id: 'food', label: 'Food Spots', icon: 'restaurant-outline', tint: '#F59E0B' },
-  { id: 'adventure', label: 'Adventure', icon: 'trail-sign-outline', tint: '#22C55E' },
-  { id: 'stays', label: 'Stays', icon: 'bed-outline', tint: '#8B5CF6' },
 ];
 
 const TRENDING_EXPERIENCES = [
@@ -79,6 +73,22 @@ const TRAVEL_CHECKLIST = [
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const RECENT_TRIPS_LIMIT = 3;
+const COMMUNITY_FAVORITES_FALLBACK = [
+  'Goa Beaches',
+  'Rishikesh Camps',
+  'Coorg Escapes',
+  'Jaipur Walks',
+  'Manali Trails',
+  'Udaipur Lakes',
+  'Pondicherry Streets',
+  'Munnar Hills',
+];
+const BUDGET_OPTIONS = [
+  { key: '$', label: 'Low' },
+  { key: '$$', label: 'Medium' },
+  { key: '$$$', label: 'High' },
+];
 
 // Returns today's date in YYYY-MM-DD using LOCAL timezone (not UTC)
 // This prevents the UTC offset bug where IST devices see yesterday as "today"
@@ -124,6 +134,7 @@ function buildMonthDays(monthDate) {
 }
 
 function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClose, onApply }) {
+  const { width: screenWidth } = useWindowDimensions();
   const [monthCursor, setMonthCursor] = useState(() => {
     if (initialStartDate) {
       return new Date(`${initialStartDate}T00:00:00`);
@@ -134,6 +145,13 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
   const [draftEnd, setDraftEnd] = useState(initialEndDate || '');
   const monthDays = useMemo(() => buildMonthDays(monthCursor), [monthCursor]);
   const todayIso = todayLocalIso();
+  const calendarCardWidth = Math.max(310, Math.min(410, screenWidth - 28));
+  const gridHorizontalPadding = 4;
+  const gridGap = 6;
+  const dayCellSize = Math.max(
+    36,
+    Math.min(46, Math.floor((calendarCardWidth - 32 - gridHorizontalPadding * 2 - gridGap * 6) / 7))
+  );
 
   useEffect(() => {
     if (visible) {
@@ -178,7 +196,7 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={localStyles.calendarOverlay}>
-        <View style={localStyles.calendarCard}>
+        <View style={[localStyles.calendarCard, { width: calendarCardWidth }]}>
           <View style={localStyles.calendarHeader}>
             <Text style={localStyles.calendarTitle}>Select trip dates</Text>
             <Pressable onPress={onClose}>
@@ -190,7 +208,9 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
             <Pressable onPress={goPrevMonth} style={localStyles.calendarNavBtn}>
               <Ionicons name="chevron-back" size={16} color="#334155" />
             </Pressable>
-            <Text style={localStyles.calendarMonthText}>{monthLabel(monthCursor)}</Text>
+            <View style={localStyles.calendarMonthChip}>
+              <Text style={localStyles.calendarMonthText}>{monthLabel(monthCursor)}</Text>
+            </View>
             <Pressable onPress={goNextMonth} style={localStyles.calendarNavBtn}>
               <Ionicons name="chevron-forward" size={16} color="#334155" />
             </Pressable>
@@ -207,7 +227,9 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
           <View style={localStyles.calendarGrid}>
             {monthDays.map((day, index) => {
               if (!day) {
-                return <View key={`empty-${index}`} style={localStyles.calendarCell} />;
+                return (
+                  <View key={`empty-${index}`} style={[localStyles.calendarCell, { width: dayCellSize, height: dayCellSize }]} />
+                );
               }
 
               const iso = toIsoDate(day);
@@ -215,6 +237,7 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
               const isStart = draftStart === iso;
               const isEnd = draftEnd === iso;
               const isBetween = !!draftStart && !!draftEnd && iso > draftStart && iso < draftEnd;
+              const isToday = iso === todayIso;
               const selected = isStart || isEnd || isBetween;
 
               return (
@@ -224,14 +247,17 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
                   onPress={() => onSelectDate(day)}
                   style={[
                     localStyles.calendarCell,
+                    { width: dayCellSize, height: dayCellSize },
                     selected && localStyles.calendarCellSelected,
                     (isStart || isEnd) && localStyles.calendarCellEdge,
+                    isToday && !selected && localStyles.calendarCellToday,
                   ]}
                 >
                   <Text
                     style={[
                       localStyles.calendarDateText,
                       isPast && localStyles.calendarDateTextPast,
+                      isToday && !selected && localStyles.calendarDateTextToday,
                       selected && localStyles.calendarDateTextSelected,
                     ]}
                   >
@@ -243,9 +269,15 @@ function DateRangePickerModal({ visible, initialStartDate, initialEndDate, onClo
           </View>
 
           <View style={localStyles.calendarInfoRow}>
-            <Text style={localStyles.calendarInfoText}>{draftStart ? formatIsoDate(draftStart) : 'Start date'}</Text>
+            <View style={localStyles.calendarInfoPill}>
+              <Text style={localStyles.calendarInfoLabel}>Start</Text>
+              <Text style={localStyles.calendarInfoText}>{draftStart ? formatIsoDate(draftStart) : 'Select'}</Text>
+            </View>
             <Ionicons name="arrow-forward" size={14} color="#94A3B8" />
-            <Text style={localStyles.calendarInfoText}>{draftEnd ? formatIsoDate(draftEnd) : 'End date'}</Text>
+            <View style={localStyles.calendarInfoPill}>
+              <Text style={localStyles.calendarInfoLabel}>End</Text>
+              <Text style={localStyles.calendarInfoText}>{draftEnd ? formatIsoDate(draftEnd) : 'Select'}</Text>
+            </View>
           </View>
           <Text style={localStyles.calendarDuration}>{durationText}</Text>
 
@@ -280,6 +312,7 @@ export default function HomeScreen({ styles }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showDateRangePicker, setShowDateRangePicker] = useState(false);
+  const [showBudgetPicker, setShowBudgetPicker] = useState(false);
   const [budget, setBudget] = useState('$');
   const [isPlanningTrip, setIsPlanningTrip] = useState(false);
   const [planningStep, setPlanningStep] = useState('Preparing smart optimizer...');
@@ -290,6 +323,49 @@ export default function HomeScreen({ styles }) {
   const [securityPromptAnswer, setSecurityPromptAnswer] = useState('');
   const [securityPromptError, setSecurityPromptError] = useState('');
   const [isSecurityPromptSaving, setIsSecurityPromptSaving] = useState(false);
+  const [recentTrips, setRecentTrips] = useState([]);
+  const [communityFavorites, setCommunityFavorites] = useState(COMMUNITY_FAVORITES_FALLBACK);
+  const [isLoadingRecentTrips, setIsLoadingRecentTrips] = useState(false);
+  const fromLocationRef = useRef('');
+  const fromSelectedPlaceRef = useRef(null);
+  const fromEditedManuallyRef = useRef(false);
+
+  useEffect(() => {
+    fromLocationRef.current = fromLocation;
+  }, [fromLocation]);
+
+  useEffect(() => {
+    fromSelectedPlaceRef.current = fromSelectedPlace;
+  }, [fromSelectedPlace]);
+
+  const applyResolvedLiveLocation = useCallback(async ({ silent = false, onlyIfUntouched = false } = {}) => {
+    try {
+      const location = await requestLiveLocation();
+      const areaName = await reverseGeocodeWithPhoton(
+        location.latitude,
+        location.longitude
+      ).catch(() => 'Current Location');
+
+      if (
+        onlyIfUntouched &&
+        (fromEditedManuallyRef.current || fromLocationRef.current.trim() || fromSelectedPlaceRef.current)
+      ) {
+        return null;
+      }
+
+      const resolved = { ...location, label: areaName || 'Current Location', source: 'live' };
+      setFromSelectedPlace(resolved);
+      setFromLocation(resolved.label);
+      setFromSuggestions([]);
+      setActiveSuggestionField(null);
+      return resolved;
+    } catch (error) {
+      if (!silent) {
+        Alert.alert('Location needed', error.message || 'Please allow location access to use GPS start point.');
+      }
+      return null;
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -310,11 +386,23 @@ export default function HomeScreen({ styles }) {
         }
       };
 
+      const prefillLiveLocation = async () => {
+        if (!isMounted) {
+          return;
+        }
+        // Auto-fill from current GPS when Home opens, but don't overwrite user-entered text.
+        if (fromLocation.trim() || fromSelectedPlace) {
+          return;
+        }
+        await applyResolvedLiveLocation({ silent: true, onlyIfUntouched: true });
+      };
+
       checkSecuritySetup();
+      prefillLiveLocation();
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, [applyResolvedLiveLocation, fromLocation, fromSelectedPlace])
   );
 
   useEffect(() => {
@@ -335,6 +423,43 @@ export default function HomeScreen({ styles }) {
     return () => clearTimeout(timeout);
   }, [fromLocation]);
 
+  const loadRecentTrips = useCallback(async () => {
+    setIsLoadingRecentTrips(true);
+    try {
+      const trips = await listTrips();
+      setRecentTrips(trips.slice(0, RECENT_TRIPS_LIMIT));
+      const likedTrips = [...trips]
+        .filter((trip) => Number(trip.likesCount || 0) > 0 || trip.isLiked)
+        .sort((a, b) => Number(b.likesCount || 0) - Number(a.likesCount || 0));
+      const backendTitles = likedTrips
+        .map((trip) => String(trip.title || '').trim())
+        .filter(Boolean);
+      const uniqueTitles = [];
+      backendTitles.forEach((title) => {
+        if (!uniqueTitles.includes(title)) {
+          uniqueTitles.push(title);
+        }
+      });
+
+      if (uniqueTitles.length >= 4) {
+        setCommunityFavorites(uniqueTitles.slice(0, 4));
+      } else {
+        setCommunityFavorites(COMMUNITY_FAVORITES_FALLBACK);
+      }
+    } catch (_error) {
+      setRecentTrips([]);
+      setCommunityFavorites(COMMUNITY_FAVORITES_FALLBACK);
+    } finally {
+      setIsLoadingRecentTrips(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRecentTrips();
+    }, [loadRecentTrips])
+  );
+
   const durationDays = useMemo(() => {
     if (!startDate || !endDate) {
       return 0;
@@ -349,26 +474,14 @@ export default function HomeScreen({ styles }) {
   };
 
   const useLiveFromLocation = async () => {
-    try {
-      const location = await requestLiveLocation();
-      const areaName = await reverseGeocodeWithPhoton(
-        location.latitude,
-        location.longitude
-      ).catch(() => 'Current Location');
-      const resolved = { ...location, label: areaName || 'Current Location' };
-      setFromSelectedPlace(resolved);
-      setFromLocation(resolved.label);
-      setFromSuggestions([]);
-      setActiveSuggestionField(null);
-    } catch (error) {
-      Alert.alert('Location needed', error.message || 'Please allow location access to use GPS start point.');
-    }
+    await applyResolvedLiveLocation({ silent: false });
   };
 
   const pickSuggestion = async (suggestion) => {
     setFromLocation(suggestion.label);
     setFromSuggestions([]);
     setActiveSuggestionField(null);
+    fromEditedManuallyRef.current = true;
 
     // If coords are already present (live location), use directly
     if (Number.isFinite(suggestion.latitude) && Number.isFinite(suggestion.longitude)) {
@@ -567,6 +680,32 @@ export default function HomeScreen({ styles }) {
           onClose={() => setShowDateRangePicker(false)}
           onApply={applyDateRange}
         />
+        <Modal visible={showBudgetPicker} transparent animationType="fade" onRequestClose={() => setShowBudgetPicker(false)}>
+          <Pressable style={localStyles.budgetPickerOverlay} onPress={() => setShowBudgetPicker(false)}>
+            <Pressable style={localStyles.budgetPickerCard} onPress={() => {}}>
+              <Text style={localStyles.budgetPickerTitle}>Select budget</Text>
+              {BUDGET_OPTIONS.map((option) => {
+                const selected = budget === option.key;
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      setBudget(option.key);
+                      setShowBudgetPicker(false);
+                    }}
+                    style={[localStyles.budgetPickerOption, selected && localStyles.budgetPickerOptionSelected]}
+                  >
+                    <Text style={[localStyles.budgetPickerOptionText, selected && localStyles.budgetPickerOptionTextSelected]}>
+                      {option.label}
+                    </Text>
+                    {selected && <Ionicons name="checkmark" size={16} color="#FF6B6B" />}
+                  </TouchableOpacity>
+                );
+              })}
+            </Pressable>
+          </Pressable>
+        </Modal>
         <Modal visible={isPlanningTrip} transparent animationType="fade">
           <View style={localStyles.planningOverlay}>
             <View style={localStyles.planningCard}>
@@ -585,13 +724,12 @@ export default function HomeScreen({ styles }) {
         <View style={styles.screenBody}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.homeScrollContent}>
             <View style={styles.homeHero}>
-              <Text style={styles.heroEyebrow}>SMART PLANNER</Text>
               <Text style={styles.homeHeroTitle}>Where to next?</Text>
               <Text style={styles.homeHeroSubtitle}>Plan your dream getaway in seconds.</Text>
               <View style={styles.heroStatRow}>
                 <View style={styles.heroStatChip}>
                   <Ionicons name="time-outline" size={14} color="#FF6B6B" />
-                  <Text style={styles.heroStatText}>Avg plan time: 18 sec</Text>
+                  <Text style={styles.heroStatText}>Avg plan time: 10 sec</Text>
                 </View>
                 <View style={styles.heroStatChip}>
                   <Ionicons name="flash-outline" size={14} color="#FF6B6B" />
@@ -599,17 +737,6 @@ export default function HomeScreen({ styles }) {
                 </View>
               </View>
             </View>
-
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickActionsRow}>
-              {QUICK_ACTIONS.map((item) => (
-                <TouchableOpacity key={item.id} activeOpacity={0.9} style={styles.quickActionCard}>
-                  <View style={[styles.quickActionIconWrap, { backgroundColor: `${item.tint}1A` }]}>
-                    <Ionicons name={item.icon} size={18} color={item.tint} />
-                  </View>
-                  <Text style={styles.quickActionLabel}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
 
             <View style={styles.itineraryCard}>
               <View style={styles.itineraryHeader}>
@@ -633,18 +760,12 @@ export default function HomeScreen({ styles }) {
                     value={fromLocation}
                     onFocus={() => setActiveSuggestionField('from')}
                     onChangeText={(value) => {
+                      fromEditedManuallyRef.current = true;
                       setFromLocation(value);
                       setFromSelectedPlace(null);
                       setActiveSuggestionField('from');
                     }}
                   />
-                </View>
-                <View style={localStyles.locationActionsRow}>
-                  <TouchableOpacity activeOpacity={0.9} style={localStyles.liveLocationBtn} onPress={useLiveFromLocation}>
-                    <Ionicons name="locate-outline" size={14} color="#0EA5E9" />
-                    <Text style={localStyles.liveLocationText}>Use Live Location</Text>
-                  </TouchableOpacity>
-                  <Text style={localStyles.locationHint}>Manual or autocomplete supported</Text>
                 </View>
                 {activeSuggestionField === 'from' && fromSuggestions.length > 0 && (
                   <View style={localStyles.suggestionCard}>
@@ -680,21 +801,13 @@ export default function HomeScreen({ styles }) {
 
                 <View style={styles.gridColumn}>
                   <Text style={styles.inputLabel}>Budget</Text>
-                  <View style={styles.budgetWrap}>
-                    {['$', '$$', '$$$'].map((level) => {
-                      const selected = budget === level;
-                      return (
-                        <TouchableOpacity
-                          key={level}
-                          activeOpacity={0.9}
-                          onPress={() => setBudget(level)}
-                          style={[styles.budgetItem, selected && styles.budgetItemActive]}
-                        >
-                          <Text style={[styles.budgetText, selected && styles.budgetTextActive]}>{level}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                  <TouchableOpacity activeOpacity={0.9} style={styles.inputRow} onPress={() => setShowBudgetPicker(true)}>
+                    <Ionicons name="cash-outline" size={18} color="#FF6B6B" style={styles.inputIcon} />
+                    <Text style={localStyles.budgetDropdownText}>
+                      {BUDGET_OPTIONS.find((option) => option.key === budget)?.label || 'Select budget'}
+                    </Text>
+                    <Ionicons name="chevron-down" size={16} color="#94A3B8" style={localStyles.budgetChevron} />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -712,7 +825,7 @@ export default function HomeScreen({ styles }) {
 
               <View style={styles.planTrustRow}>
                 <Ionicons name="shield-checkmark-outline" size={14} color="#0EA5E9" />
-                <Text style={styles.planTrustText}>Trusted by 50k+ travelers worldwide</Text>
+                <Text style={styles.planTrustText}>Trusted by travelers worldwide</Text>
               </View>
             </View>
 
@@ -748,20 +861,33 @@ export default function HomeScreen({ styles }) {
             </ScrollView>
 
             <View style={styles.communityCard}>
+              <LinearGradient
+                colors={['rgba(56,189,248,0.20)', 'rgba(56,189,248,0.03)', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.communityGlow}
+              />
               <View style={styles.communityHead}>
                 <View style={styles.communityIconWrap}>
-                  <Ionicons name="people-outline" size={18} color="#0EA5E9" />
+                  <Ionicons name="flame-outline" size={18} color="#0284C7" />
                 </View>
                 <View style={styles.communityHeadText}>
                   <Text style={styles.communityTitle}>Community Favorites This Week</Text>
-                  <Text style={styles.communitySubtitle}>Most saved destinations by TripZo travelers</Text>
+                  <Text style={styles.communitySubtitle}>Trending picks loved by TripZo travelers</Text>
+                </View>
+                <View style={styles.communityStatPill}>
+                  <Text style={styles.communityStatText}>Top {communityFavorites.length}</Text>
                 </View>
               </View>
 
               <View style={styles.communityTagsRow}>
-                {['Goa Beaches', 'Rishikesh Camps', 'Coorg Escapes', 'Jaipur Walks'].map((tag) => (
-                  <TouchableOpacity key={tag} activeOpacity={0.9} style={styles.communityTagChip}>
+                {communityFavorites.map((tag, index) => (
+                  <TouchableOpacity key={`${tag}-${index}`} activeOpacity={0.9} style={styles.communityTagChip}>
+                    <View style={styles.communityTagRank}>
+                      <Text style={styles.communityTagRankText}>{index + 1}</Text>
+                    </View>
                     <Text style={styles.communityTagText}>{tag}</Text>
+                    <Ionicons name="heart" size={13} color="#F43F5E" style={styles.communityTagIcon} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -769,19 +895,42 @@ export default function HomeScreen({ styles }) {
 
             <View style={styles.recentTripsSection}>
               <Text style={styles.sectionTitle}>Your Recent Trips</Text>
-              <TouchableOpacity activeOpacity={0.9} style={styles.recentTripCard}>
-                <Image
-                  source={{
-                    uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCxUVrLlyD4qcqI0PviLV-XWZV5gABYq2_0MGeW54LUPUzyLgpOI1CFB1mrF3--BeB3-GzPZf55uwZkYWsKcQS31GDYjQ2KVLFAw2nAfkKhjTVfUMDGF82sXabv01AClzwfydlaWb9xjBixmtFMV-r1ccBHzvbFx3Pxlq-pqnrYacyL0EnLjMUpRdXhqLKZBFh9Um2u1LhAMf_CzoTRFB3qT7g8-3hCqV1dF7--7v62PSTIV7wXr1-MBFBvABh-npUWkrl_gHZ5pG6a',
-                  }}
-                  style={styles.recentTripImage}
-                />
-                <View style={styles.recentTripBody}>
-                  <Text style={styles.recentTripTitle}>Santorini, Greece</Text>
-                  <Text style={styles.recentTripMeta}>Aug 12 - Aug 19 • 4 people</Text>
+              {isLoadingRecentTrips ? (
+                <View style={localStyles.recentTripsStateCard}>
+                  <ActivityIndicator size="small" color="#FF6B6B" />
+                  <Text style={localStyles.recentTripsStateText}>Loading your latest trips...</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#FF6B6B" />
-              </TouchableOpacity>
+              ) : recentTrips.length ? (
+                recentTrips.map((trip) => (
+                  <TouchableOpacity
+                    key={trip.id}
+                    activeOpacity={0.9}
+                    style={styles.recentTripCard}
+                    onPress={() => navigation.navigate('Trips')}
+                  >
+                    <Image
+                      source={{
+                        uri:
+                          trip.coverImageUrl ||
+                          'https://lh3.googleusercontent.com/aida-public/AB6AXuCxUVrLlyD4qcqI0PviLV-XWZV5gABYq2_0MGeW54LUPUzyLgpOI1CFB1mrF3--BeB3-GzPZf55uwZkYWsKcQS31GDYjQ2KVLFAw2nAfkKhjTVfUMDGF82sXabv01AClzwfydlaWb9xjBixmtFMV-r1ccBHzvbFx3Pxlq-pqnrYacyL0EnLjMUpRdXhqLKZBFh9Um2u1LhAMf_CzoTRFB3qT7g8-3hCqV1dF7--7v62PSTIV7wXr1-MBFBvABh-npUWkrl_gHZ5pG6a',
+                      }}
+                      style={styles.recentTripImage}
+                    />
+                    <View style={styles.recentTripBody}>
+                      <Text style={styles.recentTripTitle}>{trip.title}</Text>
+                      <Text style={styles.recentTripMeta}>
+                        {formatIsoDate(trip.startDate)} - {formatIsoDate(trip.endDate)} • {trip.stats?.totalStops || 0} stops
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#FF6B6B" />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={localStyles.recentTripsStateCard}>
+                  <Ionicons name="briefcase-outline" size={18} color="#94A3B8" />
+                  <Text style={localStyles.recentTripsStateText}>No recent trips yet. Plan one to see it here.</Text>
+                </View>
+              )}
 
               <View style={styles.smartTipCard}>
                 <View style={styles.smartTipIcon}>
@@ -851,34 +1000,6 @@ export default function HomeScreen({ styles }) {
 }
 
 const localStyles = StyleSheet.create({
-  locationActionsRow: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  liveLocationBtn: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(14,165,233,0.3)',
-    backgroundColor: 'rgba(14,165,233,0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  liveLocationText: {
-    color: '#0369A1',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  locationHint: {
-    color: '#94A3B8',
-    fontSize: 11,
-    fontWeight: '600',
-  },
   suggestionCard: {
     marginTop: 8,
     borderRadius: 12,
@@ -909,6 +1030,24 @@ const localStyles = StyleSheet.create({
     color: '#64748B',
     fontSize: 11,
   },
+  recentTripsStateCard: {
+    marginTop: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    minHeight: 62,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+  },
+  recentTripsStateText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   dateInputText: {
     height: '100%',
     paddingLeft: 42,
@@ -926,6 +1065,65 @@ const localStyles = StyleSheet.create({
     color: '#0EA5E9',
     fontSize: 11,
     fontWeight: '700',
+  },
+  budgetDropdownText: {
+    height: '100%',
+    paddingLeft: 42,
+    paddingRight: 36,
+    color: '#0F2044',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+    lineHeight: 56,
+  },
+  budgetChevron: {
+    position: 'absolute',
+    right: 12,
+    top: 20,
+  },
+  budgetPickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.35)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  budgetPickerCard: {
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    gap: 6,
+  },
+  budgetPickerTitle: {
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  budgetPickerOption: {
+    minHeight: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  budgetPickerOptionSelected: {
+    borderColor: 'rgba(255,107,107,0.3)',
+    backgroundColor: 'rgba(255,107,107,0.08)',
+  },
+  budgetPickerOptionText: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  budgetPickerOptionTextSelected: {
+    color: '#FF6B6B',
   },
   planningOverlay: {
     flex: 1,
@@ -988,9 +1186,17 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   calendarCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     padding: 16,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.12)',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 5,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -1007,62 +1213,84 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
+    gap: 10,
   },
   calendarNavBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
+  calendarMonthChip: {
+    flex: 1,
+    minHeight: 34,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
   calendarMonthText: {
     color: '#0F172A',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
   },
   calendarWeekRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 6,
+    paddingHorizontal: 4,
   },
   calendarWeekDay: {
-    width: `${100 / 7}%`,
+    flex: 1,
     textAlign: 'center',
     color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    gap: 6,
     marginBottom: 10,
   },
   calendarCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
   },
   calendarCellSelected: {
-    backgroundColor: 'rgba(255,107,107,0.12)',
+    backgroundColor: 'rgba(255,107,107,0.16)',
   },
   calendarCellEdge: {
-    backgroundColor: 'rgba(255,107,107,0.22)',
+    backgroundColor: '#FF6B6B',
+  },
+  calendarCellToday: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,107,107,0.45)',
   },
   calendarDateText: {
     color: '#334155',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   calendarDateTextPast: {
     color: '#CBD5E1',
   },
+  calendarDateTextToday: {
+    color: '#FF6B6B',
+  },
   calendarDateTextSelected: {
-    color: '#BE123C',
+    color: '#FFFFFF',
     fontWeight: '800',
   },
   calendarInfoRow: {
@@ -1071,17 +1299,34 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  calendarInfoPill: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  calendarInfoLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
   calendarInfoText: {
     color: '#334155',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   calendarDuration: {
-    marginTop: 6,
+    marginTop: 8,
     color: '#0EA5E9',
     textAlign: 'center',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   calendarActions: {
     marginTop: 14,

@@ -6,6 +6,7 @@ const GEOCODING_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 const PLACES_NEARBY_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
 const DISTANCE_MATRIX_URL = 'https://maps.googleapis.com/maps/api/distancematrix/json';
 const PLACE_PHOTO_URL = 'https://maps.googleapis.com/maps/api/place/photo';
+const MAX_ATTRACTION_RADIUS_METERS = 50000;
 
 const BUDGET_RANGES = {
   $: { min: 1, max: 2 },
@@ -531,7 +532,13 @@ async function fetchSmartRecommendation(amenity, stop, radiusMeters, fallbackLab
 export async function generateItineraryPlan(payload) {
   const fromInput = await resolveLocationInput(payload.fromLocation, 'from');
   const areaName = await reverseGeocodeWithGoogle(fromInput.latitude, fromInput.longitude);
-  const from = { ...fromInput, label: areaName || fromInput.label || 'Local Area' };
+  const userEnteredFromLabel =
+    payload?.fromLocation?.text?.trim() ||
+    payload?.fromLocation?.selected?.label?.trim() ||
+    fromInput.label?.trim() ||
+    '';
+  const canonicalFromLabel = userEnteredFromLabel || areaName || fromInput.label || 'Local Area';
+  const from = { ...fromInput, label: canonicalFromLabel };
   const center = { ...from, source: from.source || 'live' };
 
   const startDate = payload.startDate || toIsoDate(new Date());
@@ -539,24 +546,17 @@ export async function generateItineraryPlan(payload) {
   const durationDays = getDaysInclusive(startDate, endDate);
   const maxStops = clampStopsByDuration(durationDays);
 
-  // Fetch real attractions from Google Places — retry with bigger radius if needed
+  // Fetch real attractions from Google Places using max supported nearby radius.
   let attractions = [];
-  const radiiToTry = [7000, 12000, 20000];
-  for (const radius of radiiToTry) {
-    try {
-      const nearby = await getNearbyAttractions({
-        latitude: center.latitude,
-        longitude: center.longitude,
-        radiusMeters: radius,
-        limit: maxStops,
-      });
-      if (nearby.length >= 2) {
-        attractions = nearby;
-        break;
-      }
-    } catch (_error) {
-      // try next radius
-    }
+  try {
+    attractions = await getNearbyAttractions({
+      latitude: center.latitude,
+      longitude: center.longitude,
+      radiusMeters: MAX_ATTRACTION_RADIUS_METERS,
+      limit: maxStops,
+    });
+  } catch (_error) {
+    attractions = [];
   }
 
   // Only use fallback as last resort
@@ -682,7 +682,7 @@ export async function generateItineraryPlan(payload) {
     '';
 
   return {
-    title: `${center.label} Smart Itinerary`,
+    title: canonicalFromLabel,
     coverImageUrl,
     createdAtIso: new Date().toISOString(),
     startDate,

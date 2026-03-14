@@ -5,8 +5,10 @@ import { buildFallbackMatrix, getOsrmDistanceMatrix } from '../maps/googleRoutin
 import { getNearbyAmenities, getNearbyAttractions } from '../maps/googlePlacesService';
 import {
   createTripApi,
+  deleteTripApi,
   generateTripDraftApi,
   listTripsApi,
+  updateTripLikeApi,
   updateTripStatusApi,
 } from './itineraryApiService';
 
@@ -24,6 +26,7 @@ const CATEGORY_VISIT_MINUTES = {
   viewpoint: 35,
   default: 50,
 };
+const MAX_ATTRACTION_RADIUS_METERS = 50000;
 
 function parseDateOnly(value) {
   const [year, month, day] = String(value || '').split('-').map((part) => Number(part));
@@ -519,6 +522,39 @@ export async function updateTripStatus(tripId, status) {
   }
 }
 
+export async function deleteTrip(tripId) {
+  try {
+    await deleteTripApi(tripId);
+    return true;
+  } catch (_error) {
+    const raw = await AsyncStorage.getItem(TRIPS_STORAGE_KEY);
+    const trips = raw ? JSON.parse(raw) : [];
+    const nextTrips = trips.filter((trip) => trip.id !== tripId);
+    await AsyncStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(nextTrips));
+    return true;
+  }
+}
+
+export async function updateTripLike(tripId, like) {
+  try {
+    return await updateTripLikeApi(tripId, like);
+  } catch (_error) {
+    const raw = await AsyncStorage.getItem(TRIPS_STORAGE_KEY);
+    const trips = raw ? JSON.parse(raw) : [];
+    const nextTrips = trips.map((trip) =>
+      trip.id === tripId
+        ? {
+            ...trip,
+            isLiked: like,
+            likesCount: like ? 1 : 0,
+          }
+        : trip
+    );
+    await AsyncStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(nextTrips));
+    return nextTrips.find((trip) => trip.id === tripId) || null;
+  }
+}
+
 export async function generateSmartItinerary(payload) {
   try {
     const draft = await generateTripDraftApi(payload);
@@ -534,9 +570,15 @@ export async function generateSmartItinerary(payload) {
 
   const fromInput = await resolveLocationInput(payload.fromLocation, 'from');
   const areaName = await reverseGeocodeWithPhoton(fromInput.latitude, fromInput.longitude).catch(() => 'Local Area');
+  const userEnteredFromLabel =
+    payload?.fromLocation?.text?.trim() ||
+    payload?.fromLocation?.selected?.label?.trim() ||
+    fromInput.label?.trim() ||
+    '';
+  const canonicalFromLabel = userEnteredFromLabel || areaName || fromInput.label || 'Local Area';
   const from = {
     ...fromInput,
-    label: areaName || fromInput.label || 'Local Area',
+    label: canonicalFromLabel,
   };
   const center = {
     ...from,
@@ -549,27 +591,21 @@ export async function generateSmartItinerary(payload) {
   const durationDays = getDaysInclusive(startDate, endDate);
   const maxStops = clampStopsByDuration(durationDays);
 
-  // Fetch real attractions — retry with bigger radius before using fallback
+  // Fetch real attractions using max supported nearby radius before using fallback.
   let attractions = [];
-  const radiiToTry = [7000, 12000, 20000];
-  for (const radius of radiiToTry) {
-    try {
-      const nearby = await getNearbyAttractions({
-        latitude: center.latitude,
-        longitude: center.longitude,
-        radiusMeters: radius,
-        limit: maxStops,
-      });
-      if (nearby.length >= 2) {
-        attractions = nearby.map((item) => ({
-          ...item,
-          category: inferCategoryFromAttraction(item),
-        }));
-        break;
-      }
-    } catch (_error) {
-      // try next radius
-    }
+  try {
+    const nearby = await getNearbyAttractions({
+      latitude: center.latitude,
+      longitude: center.longitude,
+      radiusMeters: MAX_ATTRACTION_RADIUS_METERS,
+      limit: maxStops,
+    });
+    attractions = nearby.map((item) => ({
+      ...item,
+      category: inferCategoryFromAttraction(item),
+    }));
+  } catch (_error) {
+    attractions = [];
   }
 
   if (!attractions.length) {
@@ -728,7 +764,7 @@ export async function generateSmartItinerary(payload) {
 
   return rebalanceDaysByCapacity({
     id: `trip-${Date.now()}`,
-    title: `${center.label} Smart Itinerary`,
+    title: canonicalFromLabel,
     coverImageUrl,
     createdAt: new Date().toISOString(),
     startDate,

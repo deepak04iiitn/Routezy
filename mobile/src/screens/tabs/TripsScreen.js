@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  Alert,
   Image,
   ImageBackground,
   RefreshControl,
@@ -14,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenTopBar from '../../navigation/components/ScreenTopBar';
-import { categorizeTrips, listTrips } from '../../services/itinerary/itineraryService';
+import { categorizeTrips, deleteTrip, listTrips, updateTripLike } from '../../services/itinerary/itineraryService';
 
 const TRIP_TABS = [
   { key: 'all', label: 'All' },
@@ -35,6 +36,13 @@ const FALLBACK_COVERS = {
 function formatDateShort(dateIso) {
   const date = new Date(`${dateIso}T00:00:00`);
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function budgetLabel(value) {
+  if (value === '$') return 'Low';
+  if (value === '$$') return 'Medium';
+  if (value === '$$$') return 'High';
+  return value || 'Medium';
 }
 
 function formatTimeFromMinutes(minutesFromDayStart) {
@@ -121,6 +129,51 @@ export default function TripsScreen({ styles }) {
     }
   }, [loadTrips]);
 
+  const applyTripUpdate = (updatedTrip) => {
+    if (!updatedTrip?.id) {
+      return;
+    }
+    setTripBuckets((prev) => {
+      const replaceIn = (items = []) => items.map((trip) => (trip.id === updatedTrip.id ? { ...trip, ...updatedTrip } : trip));
+      return {
+        all: replaceIn(prev.all),
+        ongoing: replaceIn(prev.ongoing),
+        upcoming: replaceIn(prev.upcoming),
+        completed: replaceIn(prev.completed),
+      };
+    });
+    if (selectedTrip?.id === updatedTrip.id) {
+      setSelectedTrip((prev) => (prev ? { ...prev, ...updatedTrip } : prev));
+    }
+  };
+
+  const confirmDeleteTrip = (trip) => {
+    Alert.alert('Delete Trip', `Delete "${trip.title}" permanently?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteTrip(trip.id);
+          if (selectedTrip?.id === trip.id) {
+        setSelectedTrip(null);
+      }
+          await loadTrips();
+        },
+      },
+    ]);
+  };
+
+  const toggleLikeTrip = async (trip) => {
+    const nextLike = !trip.isLiked;
+    const updated = await updateTripLike(trip.id, nextLike);
+    if (updated) {
+      applyTripUpdate(updated);
+    } else {
+      applyTripUpdate({ id: trip.id, isLiked: nextLike, likesCount: nextLike ? 1 : 0 });
+    }
+  };
+
   const activeTrips = useMemo(() => tripBuckets[activeTab] || [], [activeTab, tripBuckets]);
 
   if (selectedTrip) {
@@ -140,18 +193,12 @@ export default function TripsScreen({ styles }) {
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
                       </TouchableOpacity>
                       <View style={screenStyles.heroRightBtns}>
-                        <TouchableOpacity style={screenStyles.heroCircleBtn}>
-                          <Ionicons name="heart-outline" size={19} color="#FFFFFF" />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={screenStyles.heroCircleBtn}>
-                          <Ionicons name="ellipsis-vertical" size={18} color="#FFFFFF" />
+                        <TouchableOpacity style={screenStyles.heroCircleBtn} onPress={() => toggleLikeTrip(selectedTrip)}>
+                          <Ionicons name={selectedTrip.isLiked ? 'heart' : 'heart-outline'} size={19} color="#FFFFFF" />
                         </TouchableOpacity>
                       </View>
                     </View>
                     <View style={screenStyles.heroBottomTextWrap}>
-                      <View style={screenStyles.premiumBadge}>
-                        <Text style={screenStyles.premiumBadgeText}>Premium Route</Text>
-                      </View>
                       <Text style={screenStyles.heroTitle}>{selectedTrip.title}</Text>
                       <View style={screenStyles.heroLocationRow}>
                         <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.82)" />
@@ -171,7 +218,7 @@ export default function TripsScreen({ styles }) {
                   <View style={screenStyles.summaryDivider} />
                   <View>
                     <Text style={screenStyles.summaryLabel}>Budget</Text>
-                    <Text style={screenStyles.summaryValue}>{selectedTrip.budget}</Text>
+                    <Text style={screenStyles.summaryValue}>{budgetLabel(selectedTrip.budget)}</Text>
                   </View>
                   <View style={screenStyles.summaryDivider} />
                   <View>
@@ -244,7 +291,7 @@ export default function TripsScreen({ styles }) {
                                       <Ionicons name="restaurant-outline" size={18} color="#D97706" />
                                     </View>
                                     <View style={screenStyles.restoTextWrap}>
-                                      <Text style={screenStyles.restoLabel}>Lunch Break</Text>
+                                      <Text style={screenStyles.restoLabel}>Restaurant</Text>
                                       <Text style={screenStyles.restoTitle}>{restaurantRecommendation.place?.label || 'Recommended Restaurant'}</Text>
                                     </View>
                                   </View>
@@ -296,21 +343,21 @@ export default function TripsScreen({ styles }) {
         <View style={styles.screenBody}>
           <View style={screenStyles.tabsStickyWrap}>
             <View style={screenStyles.segmentedWrap}>
-              {TRIP_TABS.map((tab) => {
-                const selected = activeTab === tab.key;
-                return (
-                  <TouchableOpacity
-                    key={tab.key}
-                    activeOpacity={0.9}
-                    onPress={() => setActiveTab(tab.key)}
+                  {TRIP_TABS.map((tab) => {
+                    const selected = activeTab === tab.key;
+                    return (
+                      <TouchableOpacity
+                        key={tab.key}
+                        activeOpacity={0.9}
+                        onPress={() => setActiveTab(tab.key)}
                     style={[screenStyles.segmentItem, selected && screenStyles.segmentItemActive]}
-                  >
+                      >
                     <Text style={[screenStyles.segmentText, selected && screenStyles.segmentTextActive]}>{tab.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                        </View>
+                      </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -320,15 +367,19 @@ export default function TripsScreen({ styles }) {
             {activeTrips.map((trip) => {
               const meta = statusMeta(trip.status);
               const status = trip.status === 'planned' ? 'upcoming' : trip.status;
-              const savedCount = (trip.days || []).reduce(
-                (sum, day) => sum + (day.stops || []).reduce((s, stop) => s + (stop.recommendations || []).length, 0),
-                0
-              );
+              const likesCount = Number(trip.likesCount || 0);
 
               return (
                 <View key={trip.id} style={[screenStyles.tripCard, status === 'completed' && screenStyles.tripCardCompleted]}>
                   <View style={screenStyles.cardImageWrap}>
                     <ImageBackground source={{ uri: getCoverImage(trip) }} style={screenStyles.cardImage}>
+                      <TouchableOpacity
+                        activeOpacity={0.9}
+                        style={screenStyles.deleteTripBtn}
+                        onPress={() => confirmDeleteTrip(trip)}
+                      >
+                        <Ionicons name="trash-outline" size={15} color="#FFFFFF" />
+                      </TouchableOpacity>
                       <View style={screenStyles.statusBadgeWrap}>
                         <View style={[screenStyles.statusBadge, { backgroundColor: meta.bg }]}> 
                           <View style={[screenStyles.statusDot, { backgroundColor: meta.dot }]} />
@@ -336,7 +387,7 @@ export default function TripsScreen({ styles }) {
                         </View>
                       </View>
                     </ImageBackground>
-                  </View>
+                </View>
 
                   <View style={screenStyles.cardBody}>
                     <View style={screenStyles.cardHeadRow}>
@@ -345,11 +396,11 @@ export default function TripsScreen({ styles }) {
                         <View style={screenStyles.calendarRow}>
                           <Ionicons name="calendar-outline" size={15} color="#64748B" />
                           <Text style={screenStyles.tripDateText}>{formatDateShort(trip.startDate)} - {formatDateShort(trip.endDate)}</Text>
-                        </View>
-                      </View>
+                    </View>
+                  </View>
                       <View style={status === 'ongoing' ? screenStyles.mapCircleActive : screenStyles.mapCircleIdle}>
                         <Ionicons name={status === 'completed' ? 'checkmark-circle' : 'map-outline'} size={18} color={status === 'ongoing' ? '#FFFFFF' : '#94A3B8'} />
-                      </View>
+                </View>
                     </View>
 
                     <View style={screenStyles.cardBottomRow}>
@@ -357,12 +408,12 @@ export default function TripsScreen({ styles }) {
                         <View style={screenStyles.inlineStat}>
                           <Ionicons name="location-outline" size={15} color="#64748B" />
                           <Text style={screenStyles.inlineStatText}>{trip.stats?.totalStops || 0} Stops</Text>
-                        </View>
+                          </View>
                         <View style={screenStyles.inlineStat}>
                           <Ionicons name="heart-outline" size={15} color="#64748B" />
-                          <Text style={screenStyles.inlineStatText}>{savedCount} Saved</Text>
+                          <Text style={screenStyles.inlineStatText}>{likesCount} Liked</Text>
+                          </View>
                         </View>
-                      </View>
 
                       <TouchableOpacity
                         activeOpacity={0.92}
@@ -371,20 +422,20 @@ export default function TripsScreen({ styles }) {
                       >
                         <Text style={[screenStyles.viewButtonText, status === 'ongoing' ? screenStyles.viewButtonTextActive : screenStyles.viewButtonTextIdle]}>
                           {status === 'completed' ? 'Trip Recap' : 'View Details'}
-                        </Text>
+                                  </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
-                </View>
-              );
-            })}
+                                </View>
+                              );
+                            })}
 
             {!activeTrips.length && (
               <View style={screenStyles.emptyCard}>
                 <Ionicons name="briefcase-outline" size={20} color="#94A3B8" />
                 <Text style={screenStyles.emptyTitle}>No trips in this tab yet</Text>
                 <Text style={screenStyles.emptySub}>Plan a new trip from Home and it will appear here.</Text>
-              </View>
+                          </View>
             )}
           </ScrollView>
 
@@ -480,6 +531,20 @@ const screenStyles = StyleSheet.create({
   statusBadgeWrap: {
     alignItems: 'flex-end',
     padding: 12,
+  },
+  deleteTripBtn: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,23,42,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+    zIndex: 3,
   },
   statusBadge: {
     borderRadius: 999,
@@ -652,22 +717,8 @@ const screenStyles = StyleSheet.create({
   heroBottomTextWrap: {
     marginBottom: 14,
   },
-  premiumBadge: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,107,107,0.9)',
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-  },
-  premiumBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
   heroTitle: {
-    marginTop: 10,
+    marginTop: 2,
     color: '#FFFFFF',
     fontSize: 34,
     lineHeight: 38,

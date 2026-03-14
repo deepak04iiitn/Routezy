@@ -40,4 +40,22 @@ export async function updateTripStatusApi(tripId, status) {
   }
 }
 
+export async function deleteTripApi(tripId) {
+  try {
+    await apiClient.delete(`/api/trips/${tripId}`);
+    return true;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Failed to delete trip.'));
+  }
+}
+
+export async function updateTripLikeApi(tripId, like) {
+  try {
+    const response = await apiClient.patch(`/api/trips/${tripId}/like`, { like });
+    return response.data?.trip;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Failed to update trip like.'));
+  }
+}
+
 

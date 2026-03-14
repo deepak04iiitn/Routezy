@@ -86,6 +86,8 @@ const tripSchema = new mongoose.Schema(
       totalStops: { type: Number, default: 0 },
       totalDistanceKm: { type: Number, default: 0 },
     },
+    likesCount: { type: Number, default: 0 },
+    isLiked: { type: Boolean, default: false },
     days: { type: [daySchema], default: [] },
   },
   {

@@ -38,6 +38,8 @@ function publicTrip(tripDoc) {
     status: normalizeTripStatus(object),
     optimization: object.optimization,
     stats: object.stats,
+    likesCount: Number(object.likesCount || 0),
+    isLiked: Boolean(object.isLiked),
     days: object.days || [],
     updatedAt: object.updatedAt,
   };
@@ -124,6 +126,39 @@ export async function updateTripStatus(req, res, next) {
 
     return res.json({
       message: 'Trip status updated.',
+      trip: publicTrip(trip),
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function deleteTrip(req, res, next) {
+  try {
+    const trip = await Trip.findOneAndDelete({ _id: req.params.tripId, userId: req.auth.userId });
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found.' });
+    }
+    return res.json({ message: 'Trip deleted successfully.' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function updateTripLike(req, res, next) {
+  try {
+    const trip = await Trip.findOne({ _id: req.params.tripId, userId: req.auth.userId });
+    if (!trip) {
+      return res.status(404).json({ message: 'Trip not found.' });
+    }
+
+    const nextLike = typeof req.body?.like === 'boolean' ? req.body.like : !trip.isLiked;
+    trip.isLiked = nextLike;
+    trip.likesCount = nextLike ? 1 : 0;
+    await trip.save();
+
+    return res.json({
+      message: 'Trip like updated.',
       trip: publicTrip(trip),
     });
   } catch (error) {
