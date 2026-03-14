@@ -74,16 +74,7 @@ const TRAVEL_CHECKLIST = [
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RECENT_TRIPS_LIMIT = 3;
-const COMMUNITY_FAVORITES_FALLBACK = [
-  'Goa Beaches',
-  'Rishikesh Camps',
-  'Coorg Escapes',
-  'Jaipur Walks',
-  'Manali Trails',
-  'Udaipur Lakes',
-  'Pondicherry Streets',
-  'Munnar Hills',
-];
+const COMMUNITY_FAVORITES_FALLBACK = ['Goa Beaches', 'Rishikesh Camps', 'Coorg Escapes', 'Jaipur Walks'];
 const BUDGET_OPTIONS = [
   { key: '$', label: 'Low' },
   { key: '$$', label: 'Medium' },
@@ -431,18 +422,8 @@ export default function HomeScreen({ styles }) {
       const likedTrips = [...trips]
         .filter((trip) => Number(trip.likesCount || 0) > 0 || trip.isLiked)
         .sort((a, b) => Number(b.likesCount || 0) - Number(a.likesCount || 0));
-      const backendTitles = likedTrips
-        .map((trip) => String(trip.title || '').trim())
-        .filter(Boolean);
-      const uniqueTitles = [];
-      backendTitles.forEach((title) => {
-        if (!uniqueTitles.includes(title)) {
-          uniqueTitles.push(title);
-        }
-      });
-
-      if (uniqueTitles.length >= 4) {
-        setCommunityFavorites(uniqueTitles.slice(0, 4));
+      if (likedTrips.length >= 4) {
+        setCommunityFavorites(likedTrips.slice(0, 4).map((trip) => trip.title));
       } else {
         setCommunityFavorites(COMMUNITY_FAVORITES_FALLBACK);
       }
@@ -861,33 +842,20 @@ export default function HomeScreen({ styles }) {
             </ScrollView>
 
             <View style={styles.communityCard}>
-              <LinearGradient
-                colors={['rgba(56,189,248,0.20)', 'rgba(56,189,248,0.03)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.communityGlow}
-              />
               <View style={styles.communityHead}>
                 <View style={styles.communityIconWrap}>
-                  <Ionicons name="flame-outline" size={18} color="#0284C7" />
+                  <Ionicons name="people-outline" size={18} color="#0EA5E9" />
                 </View>
                 <View style={styles.communityHeadText}>
                   <Text style={styles.communityTitle}>Community Favorites This Week</Text>
-                  <Text style={styles.communitySubtitle}>Trending picks loved by TripZo travelers</Text>
-                </View>
-                <View style={styles.communityStatPill}>
-                  <Text style={styles.communityStatText}>Top {communityFavorites.length}</Text>
+                  <Text style={styles.communitySubtitle}>Most saved destinations by TripZo travelers</Text>
                 </View>
               </View>
 
               <View style={styles.communityTagsRow}>
-                {communityFavorites.map((tag, index) => (
-                  <TouchableOpacity key={`${tag}-${index}`} activeOpacity={0.9} style={styles.communityTagChip}>
-                    <View style={styles.communityTagRank}>
-                      <Text style={styles.communityTagRankText}>{index + 1}</Text>
-                    </View>
+                {communityFavorites.map((tag) => (
+                  <TouchableOpacity key={tag} activeOpacity={0.9} style={styles.communityTagChip}>
                     <Text style={styles.communityTagText}>{tag}</Text>
-                    <Ionicons name="heart" size={13} color="#F43F5E" style={styles.communityTagIcon} />
                   </TouchableOpacity>
                 ))}
               </View>
