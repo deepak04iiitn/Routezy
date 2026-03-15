@@ -8,12 +8,13 @@ const GOOGLE_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 const GEOCODING_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 const PLACES_NEARBY_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
+const PLACES_TEXT_SEARCH_URL = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
 const DISTANCE_MATRIX_URL = 'https://maps.googleapis.com/maps/api/distancematrix/json';
 const PLACE_PHOTO_URL = 'https://maps.googleapis.com/maps/api/place/photo';
-const MAX_ATTRACTION_RADIUS_METERS = 50000;
-const MAX_ATTRACTIONS_TO_FETCH = 120;
+const MAX_ATTRACTIONS_TO_FETCH = 50;
+const MAX_CITY_ATTRACTION_QUERY_VARIANTS = 8;
+const MAX_CITY_TEXT_SEARCH_PAGES = 2;
 const MAX_STOPS_PER_DAY = 7;
-const MAX_ATTRACTION_QUERY_VARIANTS = 10;
 const MAX_RECOMMENDATION_ENRICHED_STOPS = 36;
 const AMENITY_LOOKUP_TIMEOUT_MS = 3500;
 const RESTAURANT_STOP_INTERVAL = 3;
@@ -94,6 +95,30 @@ function normalizeLocationName(value = '') {
     .replace(/[^\w\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function extractCityFromAddressComponents(addressComponents = [], fallback = '') {
+  const find = (type) => addressComponents.find((component) => component.types?.includes(type))?.long_name;
+  return (
+    find('locality') ||
+    find('postal_town') ||
+    find('administrative_area_level_2') ||
+    find('administrative_area_level_1') ||
+    fallback ||
+    'Local Area'
+  );
+}
+
+function extractCityHintFromInput(input = {}) {
+  const raw = String(input?.text || input?.selected?.label || input?.label || '').trim();
+  if (!raw) {
+    return '';
+  }
+  const parts = raw
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : raw;
 }
 
 function buildLocationKey(latitude, longitude) {
@@ -193,6 +218,7 @@ async function geocodeWithGoogle(query) {
 
   const components = result.address_components || [];
   const find = (type) => components.find((c) => c.types.includes(type))?.long_name;
+  const city = extractCityFromAddressComponents(components, rawQuery);
   const label =
     find('sublocality_level_1') ||
     find('sublocality') ||
@@ -227,13 +253,14 @@ async function geocodeWithGoogle(query) {
 
   return {
     label,
+    city,
     latitude,
     longitude,
     source: 'manual',
   };
 }
 
-async function reverseGeocodeWithGoogle(latitude, longitude) {
+async function reverseGeocodeDetailsWithGoogle(latitude, longitude) {
   try {
     const latitudeRounded = toRoundedCoordinate(latitude);
     const longitudeRounded = toRoundedCoordinate(longitude);
@@ -242,7 +269,10 @@ async function reverseGeocodeWithGoogle(latitude, longitude) {
       longitudeRounded,
     }).lean();
     if (cached?.locationName) {
-      return cached.locationName;
+      return {
+        label: cached.locationName,
+        city: extractCityFromAddressComponents([], cached.locationName),
+      };
     }
 
     const response = await axios.get(GEOCODING_URL, {
@@ -252,18 +282,14 @@ async function reverseGeocodeWithGoogle(latitude, longitude) {
     await recordGoogleApiUsageCost({ apiType: 'geocode', requestCount: 1 });
 
     const result = response.data?.results?.[0];
-    if (!result) return 'Local Area';
+    if (!result) {
+      return { label: 'Local Area', city: 'Local Area' };
+    }
 
     const components = result.address_components || [];
     const find = (type) => components.find((c) => c.types.includes(type))?.long_name;
-    const label = (
-      find('sublocality_level_1') ||
-      find('sublocality') ||
-      find('locality') ||
-      find('administrative_area_level_2') ||
-      result.formatted_address.split(',')[0] ||
-      'Local Area'
-    );
+    const city = extractCityFromAddressComponents(components, 'Local Area');
+    const label = find('sublocality_level_1') || find('sublocality') || city || result.formatted_address.split(',')[0] || 'Local Area';
     const formattedAddress = result.formatted_address || '';
     const canonicalNormalizedName = normalizeLocationName(formattedAddress || label);
 
@@ -287,9 +313,9 @@ async function reverseGeocodeWithGoogle(latitude, longitude) {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    return label;
+    return { label, city };
   } catch (_error) {
-    return 'Local Area';
+    return { label: 'Local Area', city: 'Local Area' };
   }
 }
 
@@ -387,6 +413,15 @@ const EXCLUDED_PLACE_TYPES = new Set([
   'doctor',
   'school',
   'university',
+  'restaurant',
+  'food',
+  'cafe',
+  'meal_takeaway',
+  'meal_delivery',
+  'train_station',
+  'subway_station',
+  'transit_station',
+  'bus_station',
 ]);
 
 const EXCLUDED_NAME_KEYWORDS = [
@@ -402,6 +437,19 @@ const EXCLUDED_NAME_KEYWORDS = [
   'llp',
   'office',
   'services',
+  'restaurant',
+  'railway station',
+  'train station',
+  'metro station',
+  'junction',
+  'hotel',
+  'resort',
+  'guest house',
+  'guesthouse',
+  'hostel',
+  'inn',
+  'stay',
+  'stays',
 ];
 
 const PUBLIC_ATTRACTION_TYPES = new Set([
@@ -424,27 +472,6 @@ const PUBLIC_ATTRACTION_TYPES = new Set([
   'city_hall',
 ]);
 
-const EXPANDED_ATTRACTION_QUERIES = [
-  { type: 'tourist_attraction' },
-  { type: 'museum' },
-  { type: 'art_gallery' },
-  { type: 'park' },
-  { type: 'zoo' },
-  { type: 'amusement_park' },
-  { type: 'aquarium' },
-  { type: 'hindu_temple' },
-  { type: 'church' },
-  { type: 'mosque' },
-  { type: 'synagogue' },
-  { keyword: 'fort palace castle monument heritage' },
-  { keyword: 'old town heritage district archaeological ruins' },
-  { keyword: 'viewpoint hill sunset sunrise skyline observation tower' },
-  { keyword: 'river walk lake promenade ghat waterfront' },
-  { keyword: 'famous market shopping district handicraft antique night market' },
-  { keyword: 'famous street boulevard city square clock tower landmark bridge' },
-  { keyword: 'theme park water park adventure park entertainment complex' },
-  { keyword: 'science center planetarium exhibition hall cultural center' },
-];
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -456,6 +483,34 @@ async function googleNearbySearchAllPages({ latitude, longitude, radiusMeters, t
   } catch (_error) {
     return [];
   }
+}
+
+async function googleTextSearchAllPages({ query, maxPages = 1 }) {
+  const allResults = [];
+  let nextPageToken = null;
+  let page = 0;
+
+  do {
+    const params = nextPageToken
+      ? { pagetoken: nextPageToken, key: GOOGLE_KEY }
+      : { query, key: GOOGLE_KEY };
+
+    if (nextPageToken) {
+      await sleep(1800);
+    }
+
+    const response = await axios.get(PLACES_TEXT_SEARCH_URL, { params, timeout: 15000 });
+    await recordGoogleApiUsageCost({ apiType: 'places_nearby', requestCount: 1 });
+    const status = response.data?.status;
+    if (status !== 'OK' && status !== 'ZERO_RESULTS' && status !== 'INVALID_REQUEST') {
+      throw new Error(`Places Text Search API error: ${status}`);
+    }
+    allResults.push(...(response.data?.results || []));
+    nextPageToken = response.data?.next_page_token || null;
+    page += 1;
+  } while (nextPageToken && page < maxPages);
+
+  return allResults;
 }
 
 function normalizeGooglePlace(place) {
@@ -480,13 +535,39 @@ function normalizeGooglePlace(place) {
       userRatingsTotal: place.user_ratings_total,
       priceLevel: place.price_level,
       openNow: place.opening_hours?.open_now,
+      placeTypes: Array.isArray(place.types) ? place.types : [],
     },
   };
 }
 
+function isExcludedStayFoodTransitPlace(place = {}) {
+  const lowerName = String(place.name || place.label || '').toLowerCase();
+  const rawTypes = [
+    ...(Array.isArray(place.types) ? place.types : []),
+    ...(Array.isArray(place.tags?.placeTypes) ? place.tags.placeTypes : []),
+  ];
+  const lowerTypes = rawTypes.map((type) => String(type || '').toLowerCase());
+  const category = String(place.category || '').toLowerCase();
+  const tourismTag = String(place.tags?.tourism || '').toLowerCase();
+
+  if (lowerTypes.some((type) => EXCLUDED_PLACE_TYPES.has(type))) {
+    return true;
+  }
+  if (EXCLUDED_NAME_KEYWORDS.some((keyword) => lowerName.includes(keyword))) {
+    return true;
+  }
+  return (
+    category === 'restaurant' ||
+    category === 'hotel' ||
+    category === 'lodging' ||
+    tourismTag === 'hotel' ||
+    tourismTag === 'hostel'
+  );
+}
+
 function isLikelyPublicAttraction(place) {
   const types = place.types || [];
-  if (types.some((type) => EXCLUDED_PLACE_TYPES.has(type))) {
+  if (types.some((type) => EXCLUDED_PLACE_TYPES.has(type)) || isExcludedStayFoodTransitPlace(place)) {
     return false;
   }
 
@@ -532,24 +613,63 @@ function isLikelyPublicAttraction(place) {
   );
 }
 
-function attractionPopularityScore(place) {
-  const rating = Number(place.rating || 0);
-  const ratingsCount = Number(place.user_ratings_total || 0);
-  return rating * 100 + Math.min(ratingsCount, 5000) * 0.06;
+function compareByPopularityPriority(a, b) {
+  const ratingsCountA = Number(a.user_ratings_total || 0);
+  const ratingsCountB = Number(b.user_ratings_total || 0);
+  if (ratingsCountA !== ratingsCountB) {
+    return ratingsCountB - ratingsCountA;
+  }
+  const ratingA = Number(a.rating || 0);
+  const ratingB = Number(b.rating || 0);
+  if (ratingA !== ratingB) {
+    return ratingB - ratingA;
+  }
+  // Google Nearby/Text Search does not expose a separate "reviews count" field;
+  // user_ratings_total is used as the closest reliable review-volume proxy.
+  const reviewsCountA = Number(a.user_ratings_total || 0);
+  const reviewsCountB = Number(b.user_ratings_total || 0);
+  return reviewsCountB - reviewsCountA;
 }
 
-async function getNearbyAttractions({ latitude, longitude, radiusMeters = 7000, limit = 240 }) {
+function buildCityAttractionQueries(cityName) {
+  const city = String(cityName || '').trim();
+  return [
+    `top tourist attractions in ${city}`,
+    `best places to visit in ${city}`,
+    `must visit places in ${city}`,
+    `top rated museums in ${city}`,
+    `top landmarks in ${city}`,
+    `famous heritage sites in ${city}`,
+    `top cultural places in ${city}`,
+    `top things to do in ${city}`,
+  ];
+}
+
+function normalizeManualSelectedAttractions(selectedAttractions = []) {
+  return selectedAttractions
+    .filter((item) => Number.isFinite(item?.latitude) && Number.isFinite(item?.longitude))
+    .filter((item) => !isExcludedStayFoodTransitPlace(item))
+    .map((item, index) => ({
+      id: String(item.id || `manual-${index + 1}`),
+      label: String(item.label || `Selected Place ${index + 1}`),
+      latitude: Number(item.latitude),
+      longitude: Number(item.longitude),
+      imageUrl: String(item.imageUrl || ''),
+      category: item.tags?.tourism === 'museum' ? 'museum' : (item.category || 'attraction'),
+      tags: {
+        ...(item.tags || {}),
+        tourism: item.tags?.tourism || 'attraction',
+        rating: item.tags?.rating,
+        userRatingsTotal: item.tags?.userRatingsTotal || item.tags?.reviews,
+        placeTypes: Array.isArray(item.tags?.placeTypes) ? item.tags.placeTypes : [],
+      },
+    }));
+}
+
+async function getCityTopAttractions({ cityName, limit = 240 }) {
+  const queries = buildCityAttractionQueries(cityName).slice(0, MAX_CITY_ATTRACTION_QUERY_VARIANTS);
   const queryResults = await Promise.allSettled(
-    EXPANDED_ATTRACTION_QUERIES.slice(0, MAX_ATTRACTION_QUERY_VARIANTS).map((query) =>
-      googleNearbySearchAllPages({
-        latitude,
-        longitude,
-        radiusMeters,
-        type: query.type,
-        keyword: query.keyword,
-        maxPages: 1,
-      })
-    )
+    queries.map((query) => googleTextSearchAllPages({ query, maxPages: MAX_CITY_TEXT_SEARCH_PAGES }))
   );
   const combined = queryResults.flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
 
@@ -558,7 +678,7 @@ async function getNearbyAttractions({ latitude, longitude, radiusMeters = 7000, 
   const strictPublic = deduped
     .filter((place) => isLikelyPublicAttraction(place))
     .filter((place) => Number(place.user_ratings_total || 0) >= 20 && Number(place.rating || 0) >= 3.8)
-    .sort((a, b) => attractionPopularityScore(b) - attractionPopularityScore(a));
+    .sort(compareByPopularityPriority);
 
   if (strictPublic.length >= Math.min(4, limit)) {
     return strictPublic.slice(0, limit).map(normalizeGooglePlace);
@@ -567,7 +687,7 @@ async function getNearbyAttractions({ latitude, longitude, radiusMeters = 7000, 
   // Fallback when an area has sparse ratings: still exclude obvious companies/agencies.
   const publicFallback = deduped
     .filter((place) => isLikelyPublicAttraction(place))
-    .sort((a, b) => attractionPopularityScore(b) - attractionPopularityScore(a));
+    .sort(compareByPopularityPriority);
   return publicFallback.slice(0, limit).map(normalizeGooglePlace);
 }
 
@@ -784,12 +904,28 @@ function fallbackAttractions(center, count) {
 async function resolveLocationInput(input, role) {
   // Already resolved coords passed directly
   if (input?.selected && Number.isFinite(input.selected.latitude)) {
+    const selectedSource = input.selected.source || 'selected';
+    const explicitText = String(input?.text || '').trim();
+    if (selectedSource === 'manual' && explicitText) {
+      try {
+        const geocoded = await geocodeWithGoogle(explicitText);
+        return {
+          ...geocoded,
+          label: explicitText,
+          source: 'manual',
+          accuracy: input.selected.accuracy ?? null,
+        };
+      } catch (_error) {
+        // Fall back to provided coordinates below.
+      }
+    }
     return {
       label: input.selected.label || input.text || `${role} location`,
       latitude: input.selected.latitude,
       longitude: input.selected.longitude,
-      source: input.selected.source || 'selected',
+      source: selectedSource,
       accuracy: input.selected.accuracy ?? null,
+      city: extractCityHintFromInput(input),
     };
   }
 
@@ -800,6 +936,7 @@ async function resolveLocationInput(input, role) {
       longitude: input.longitude,
       source: input.source || 'selected',
       accuracy: input.accuracy ?? null,
+      city: extractCityHintFromInput(input),
     };
   }
 
@@ -811,6 +948,17 @@ async function resolveLocationInput(input, role) {
     throw httpError('Current location is required. Please provide live location access.', 400);
   }
   return null;
+}
+
+async function resolveCityContext(fromResolvedLocation) {
+  if (fromResolvedLocation?.city?.trim()) {
+    return fromResolvedLocation.city.trim();
+  }
+  if (fromResolvedLocation?.label?.trim() && fromResolvedLocation?.source === 'manual') {
+    return fromResolvedLocation.label.trim();
+  }
+  const reverse = await reverseGeocodeDetailsWithGoogle(fromResolvedLocation.latitude, fromResolvedLocation.longitude);
+  return reverse.city || reverse.label || fromResolvedLocation.label || 'Local Area';
 }
 
 // ─── Smart recommendation helper ─────────────────────────────────────────────
@@ -922,18 +1070,41 @@ async function saveItineraryToCache(payload, itineraryData) {
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
+export async function previewCityAttractions(payload) {
+  await assertCanGenerateNewItinerary();
+  const fromInput = await resolveLocationInput(payload.fromLocation, 'from');
+  const city = await resolveCityContext(fromInput);
+  const attractions = await getCityTopAttractions({
+    cityName: city,
+    limit: Math.min(MAX_ATTRACTIONS_TO_FETCH, Math.max(10, Number(payload?.limit || 50))),
+  });
+
+  return {
+    city,
+    from: fromInput,
+    attractions,
+  };
+}
+
 export async function generateItineraryPlan(payload) {
-  const cachedItinerary = await findCachedItinerary(payload);
-  if (cachedItinerary) {
-    return {
-      ...cachedItinerary,
-      cacheMeta: { itinerary: 'hit' },
-    };
+  const isManualPlanning = payload?.planMode === 'manual';
+  const hasProvidedAttractions = Array.isArray(payload?.selectedAttractions) && payload.selectedAttractions.length > 0;
+  const shouldUseCache = !hasProvidedAttractions;
+  if (shouldUseCache) {
+    const cachedItinerary = await findCachedItinerary(payload);
+    if (cachedItinerary) {
+      return {
+        ...cachedItinerary,
+        cacheMeta: { itinerary: 'hit' },
+      };
+    }
   }
   await assertCanGenerateNewItinerary();
 
   const fromInput = await resolveLocationInput(payload.fromLocation, 'from');
-  const areaName = await reverseGeocodeWithGoogle(fromInput.latitude, fromInput.longitude);
+  const reverseGeo = await reverseGeocodeDetailsWithGoogle(fromInput.latitude, fromInput.longitude);
+  const areaName = reverseGeo.label;
+  const detectedCity = reverseGeo.city;
   const userEnteredFromLabel =
     payload?.fromLocation?.text?.trim() ||
     payload?.fromLocation?.selected?.label?.trim() ||
@@ -948,17 +1119,21 @@ export async function generateItineraryPlan(payload) {
   const durationDays = getDaysInclusive(startDate, endDate);
   const maxTotalStopsForTrip = Math.max(1, durationDays * MAX_STOPS_PER_DAY);
 
-  // Fetch real attractions from Google Places using max supported nearby radius.
+  const cityContext = (fromInput.city || detectedCity || canonicalFromLabel || 'Local Area').trim();
+
+  // Fetch top attractions city-wise or use manually selected attractions.
   let attractions = [];
-  try {
-    attractions = await getNearbyAttractions({
-      latitude: center.latitude,
-      longitude: center.longitude,
-      radiusMeters: MAX_ATTRACTION_RADIUS_METERS,
-      limit: Math.min(MAX_ATTRACTIONS_TO_FETCH, maxTotalStopsForTrip),
-    });
-  } catch (_error) {
-    attractions = [];
+  if (hasProvidedAttractions) {
+    attractions = normalizeManualSelectedAttractions(payload.selectedAttractions).slice(0, MAX_ATTRACTIONS_TO_FETCH);
+  } else {
+    try {
+      attractions = await getCityTopAttractions({
+        cityName: cityContext,
+        limit: MAX_ATTRACTIONS_TO_FETCH,
+      });
+    } catch (_error) {
+      attractions = [];
+    }
   }
 
   // Only use fallback as last resort
@@ -1182,6 +1357,8 @@ export async function generateItineraryPlan(payload) {
     days,
   };
 
-  await saveItineraryToCache(payload, itinerary);
+  if (shouldUseCache) {
+    await saveItineraryToCache(payload, itinerary);
+  }
   return itinerary;
 }

@@ -1,7 +1,8 @@
 import Trip from '../models/Trip.js';
 import SavedTrip from '../models/SavedTrip.js';
-import { generateItineraryPlan } from '../services/itineraryPlannerService.js';
+import { generateItineraryPlan, previewCityAttractions } from '../services/itineraryPlannerService.js';
 import {
+  validateAttractionPreviewPayload,
   validateItineraryGenerationPayload,
   validateTripCreationPayload,
   validateTripStatusPayload,
@@ -81,6 +82,23 @@ export async function generateTripDraft(req, res, next) {
     return res.json({
       message: 'Itinerary generated successfully.',
       trip: draft,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function previewTripAttractions(req, res, next) {
+  try {
+    const { errors, value } = validateAttractionPreviewPayload(req.body);
+    if (errors.length) {
+      return res.status(400).json({ message: errors[0], errors });
+    }
+
+    const preview = await previewCityAttractions(value);
+    return res.json({
+      message: 'Attractions fetched successfully.',
+      ...preview,
     });
   } catch (error) {
     return next(error);

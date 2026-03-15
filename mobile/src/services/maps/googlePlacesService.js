@@ -4,8 +4,11 @@
 
 const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const NEARBY_SEARCH_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
+const TEXT_SEARCH_URL = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
 const PLACE_PHOTO_URL = 'https://maps.googleapis.com/maps/api/place/photo';
 const MAX_ATTRACTION_QUERY_VARIANTS = 10;
+const MAX_CITY_QUERY_VARIANTS = 8;
+const MAX_CITY_TEXT_SEARCH_PAGES = 2;
 
 // Maps to track categories from Google Place types
 const GOOGLE_TYPE_TO_CATEGORY = {
@@ -32,6 +35,15 @@ const EXCLUDED_PLACE_TYPES = new Set([
   'doctor',
   'school',
   'university',
+  'restaurant',
+  'food',
+  'cafe',
+  'meal_takeaway',
+  'meal_delivery',
+  'train_station',
+  'subway_station',
+  'transit_station',
+  'bus_station',
 ]);
 
 const EXCLUDED_NAME_KEYWORDS = [
@@ -47,6 +59,19 @@ const EXCLUDED_NAME_KEYWORDS = [
   'llp',
   'office',
   'services',
+  'restaurant',
+  'railway station',
+  'train station',
+  'metro station',
+  'junction',
+  'hotel',
+  'resort',
+  'guest house',
+  'guesthouse',
+  'hostel',
+  'inn',
+  'stay',
+  'stays',
 ];
 
 const PUBLIC_ATTRACTION_TYPES = new Set([
@@ -187,13 +212,39 @@ function normalizeGooglePlace(place) {
       rating: place.rating,
       userRatingsTotal: place.user_ratings_total,
       openNow: place.opening_hours?.open_now,
+      placeTypes: Array.isArray(place.types) ? place.types : [],
     },
   };
 }
 
+function isExcludedStayFoodTransitPlace(place = {}) {
+  const lowerName = String(place.name || place.label || '').toLowerCase();
+  const rawTypes = [
+    ...(Array.isArray(place.types) ? place.types : []),
+    ...(Array.isArray(place.tags?.placeTypes) ? place.tags.placeTypes : []),
+  ];
+  const lowerTypes = rawTypes.map((type) => String(type || '').toLowerCase());
+  const category = String(place.category || '').toLowerCase();
+  const tourismTag = String(place.tags?.tourism || '').toLowerCase();
+
+  if (lowerTypes.some((type) => EXCLUDED_PLACE_TYPES.has(type))) {
+    return true;
+  }
+  if (EXCLUDED_NAME_KEYWORDS.some((keyword) => lowerName.includes(keyword))) {
+    return true;
+  }
+  return (
+    category === 'restaurant' ||
+    category === 'hotel' ||
+    category === 'lodging' ||
+    tourismTag === 'hotel' ||
+    tourismTag === 'hostel'
+  );
+}
+
 function isLikelyPublicAttraction(place) {
   const types = place.types || [];
-  if (types.some((type) => EXCLUDED_PLACE_TYPES.has(type))) {
+  if (types.some((type) => EXCLUDED_PLACE_TYPES.has(type)) || isExcludedStayFoodTransitPlace(place)) {
     return false;
   }
 
@@ -245,6 +296,64 @@ function attractionPopularityScore(place) {
   return rating * 100 + Math.min(ratingsCount, 5000) * 0.06;
 }
 
+function compareByPopularityPriority(a, b) {
+  const ratingsA = Number(a.user_ratings_total || 0);
+  const ratingsB = Number(b.user_ratings_total || 0);
+  if (ratingsA !== ratingsB) {
+    return ratingsB - ratingsA;
+  }
+  const ratingA = Number(a.rating || 0);
+  const ratingB = Number(b.rating || 0);
+  if (ratingA !== ratingB) {
+    return ratingB - ratingA;
+  }
+  const reviewsA = Number(a.user_ratings_total || 0);
+  const reviewsB = Number(b.user_ratings_total || 0);
+  return reviewsB - reviewsA;
+}
+
+function buildCityAttractionQueries(cityName) {
+  const city = String(cityName || '').trim();
+  return [
+    `top tourist attractions in ${city}`,
+    `best places to visit in ${city}`,
+    `must visit places in ${city}`,
+    `top rated museums in ${city}`,
+    `top landmarks in ${city}`,
+    `famous heritage sites in ${city}`,
+    `top cultural places in ${city}`,
+    `top things to do in ${city}`,
+  ];
+}
+
+async function googleTextSearchAllPages({ query, maxPages = 1 }) {
+  const allResults = [];
+  let nextPageToken = null;
+  let page = 0;
+
+  do {
+    let url = `${TEXT_SEARCH_URL}?query=${encodeURIComponent(query)}&key=${GOOGLE_KEY}`;
+    if (nextPageToken) {
+      await sleep(1800);
+      url = `${TEXT_SEARCH_URL}?pagetoken=${encodeURIComponent(nextPageToken)}&key=${GOOGLE_KEY}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      break;
+    }
+    const data = await response.json();
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS' && data.status !== 'INVALID_REQUEST') {
+      break;
+    }
+    allResults.push(...(data.results || []));
+    nextPageToken = data.next_page_token || null;
+    page += 1;
+  } while (nextPageToken && page < maxPages);
+
+  return allResults;
+}
+
 // ─── Nearby Attractions (getNearbyAttractions) ───────────────────────────────
 
 /**
@@ -283,6 +392,33 @@ export async function getNearbyAttractions({ latitude, longitude, radiusMeters =
     .filter((place) => isLikelyPublicAttraction(place))
     .sort((a, b) => attractionPopularityScore(b) - attractionPopularityScore(a));
   return publicFallback.slice(0, limit).map(normalizeGooglePlace);
+}
+
+export async function getCityTopAttractions({ cityName, limit = 240 }) {
+  const queryResults = await Promise.allSettled(
+    buildCityAttractionQueries(cityName)
+      .slice(0, MAX_CITY_QUERY_VARIANTS)
+      .map((query) => googleTextSearchAllPages({ query, maxPages: MAX_CITY_TEXT_SEARCH_PAGES }))
+  );
+
+  const combined = queryResults.flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
+
+  const seen = new Set();
+  const deduped = combined.filter((p) => p.name && !seen.has(p.place_id) && seen.add(p.place_id));
+  const strictPublic = deduped
+    .filter((place) => isLikelyPublicAttraction(place))
+    .filter((place) => Number(place.user_ratings_total || 0) >= 20 && Number(place.rating || 0) >= 3.8)
+    .sort(compareByPopularityPriority);
+
+  if (strictPublic.length >= Math.min(4, limit)) {
+    return strictPublic.slice(0, limit).map(normalizeGooglePlace);
+  }
+
+  return deduped
+    .filter((place) => isLikelyPublicAttraction(place))
+    .sort(compareByPopularityPriority)
+    .slice(0, limit)
+    .map(normalizeGooglePlace);
 }
 
 // ─── Nearby Amenities (getNearbyAmenities) ───────────────────────────────────

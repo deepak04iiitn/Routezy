@@ -129,6 +129,8 @@ export function validateItineraryGenerationPayload(payload) {
   const fromLocation = payload?.fromLocation || {};
   const startDate = payload?.startDate;
   const endDate = payload?.endDate;
+  const planMode = payload?.planMode === 'manual' ? 'manual' : 'auto';
+  const selectedAttractions = Array.isArray(payload?.selectedAttractions) ? payload.selectedAttractions : [];
 
   validateLocationInput(fromLocation, 'From', errors);
 
@@ -148,6 +150,10 @@ export function validateItineraryGenerationPayload(payload) {
     errors.push('End date must be on or after start date.');
   }
 
+  if (planMode === 'manual' && !selectedAttractions.length) {
+    errors.push('Please select at least one attraction for manual planning.');
+  }
+
   return {
     errors,
     value: {
@@ -155,6 +161,25 @@ export function validateItineraryGenerationPayload(payload) {
       startDate,
       endDate,
       budget,
+      planMode,
+      selectedAttractions,
+    },
+  };
+}
+
+export function validateAttractionPreviewPayload(payload) {
+  const errors = [];
+  const fromLocation = payload?.fromLocation || {};
+  const limitRaw = Number(payload?.limit);
+  const limit = Number.isFinite(limitRaw) ? Math.max(10, Math.min(50, Math.floor(limitRaw))) : 50;
+
+  validateLocationInput(fromLocation, 'From', errors);
+
+  return {
+    errors,
+    value: {
+      fromLocation,
+      limit,
     },
   };
 }

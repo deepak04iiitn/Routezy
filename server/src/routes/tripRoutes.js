@@ -8,6 +8,7 @@ import {
   listLatestTrips,
   listSavedTrips,
   listTrips,
+  previewTripAttractions,
   removeSavedTripForUser,
   saveTripForUser,
   updateTripLike,
@@ -19,6 +20,7 @@ import { itineraryGenerateLimiter } from '../middleware/securityMiddleware.js';
 const router = Router();
 
 router.post('/generate', requireAuth, itineraryGenerateLimiter, generateTripDraft);
+router.post('/attractions-preview', requireAuth, itineraryGenerateLimiter, previewTripAttractions);
 router.post('/', requireAuth, createTrip);
 router.get('/explore', requireAuth, listExploreTrips);
 router.get('/latest', requireAuth, listLatestTrips);

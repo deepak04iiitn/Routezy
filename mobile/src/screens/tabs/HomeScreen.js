@@ -5,12 +5,14 @@ import {
   Animated,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  Vibration,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -19,10 +21,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenTopBar from '../../navigation/components/ScreenTopBar';
+import TripPlannerScreen from './TripPlannerScreen';
 import { getMe, updateProfile } from '../../services/auth/authService';
 import { requestLiveLocation } from '../../services/maps/locationService';
-import { searchPhotonPlaces, getPlaceCoords, reverseGeocodeWithPhoton } from '../../services/maps/googleGeocodingService';
-import { generateSmartItinerary, listLatestTrips, listTrips, saveTrip } from '../../services/itinerary/itineraryService';
+import {
+  searchPhotonPlaces,
+  getPlaceCoords,
+  reverseGeocodeWithPhoton,
+} from '../../services/maps/googleGeocodingService';
+import {
+  listLatestTrips,
+  listTrips,
+} from '../../services/itinerary/itineraryService';
 
 const TRIP_PLANNING_ESSENTIALS = [
   {
@@ -319,9 +329,7 @@ export default function HomeScreen({ styles }) {
   const [showDateRangePicker, setShowDateRangePicker] = useState(false);
   const [showBudgetPicker, setShowBudgetPicker] = useState(false);
   const [budget, setBudget] = useState('$');
-  const [isPlanningTrip, setIsPlanningTrip] = useState(false);
-  const [planningStep, setPlanningStep] = useState('Preparing smart optimizer...');
-  const [planningProgress, setPlanningProgress] = useState(0);
+  const [plannerView, setPlannerView] = useState('form');
   const [securityPromptVisible, setSecurityPromptVisible] = useState(false);
   const [securityPromptStep, setSecurityPromptStep] = useState('intro');
   const [securityPromptQuestion, setSecurityPromptQuestion] = useState('');
@@ -395,23 +403,11 @@ export default function HomeScreen({ styles }) {
         }
       };
 
-      const prefillLiveLocation = async () => {
-        if (!isMounted) {
-          return;
-        }
-        // Auto-fill from current GPS when Home opens, but don't overwrite user-entered text.
-        if (fromLocation.trim() || fromSelectedPlace) {
-          return;
-        }
-        await applyResolvedLiveLocation({ silent: true, onlyIfUntouched: true });
-      };
-
       checkSecuritySetup();
-      prefillLiveLocation();
       return () => {
         isMounted = false;
       };
-    }, [applyResolvedLiveLocation, fromLocation, fromSelectedPlace])
+    }, [])
   );
 
   useEffect(() => {
@@ -447,6 +443,14 @@ export default function HomeScreen({ styles }) {
   }, [smartTipAnim]);
 
   const currentSmartTip = SMART_TIPS[smartTipIndex] || SMART_TIPS[0];
+
+  const triggerHaptic = useCallback((kind = 'light') => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+    const durationMs = kind === 'success' ? 14 : 7;
+    Vibration.vibrate(durationMs);
+  }, []);
 
   useEffect(() => {
     if (!fromLocation.trim()) {
@@ -568,67 +572,12 @@ export default function HomeScreen({ styles }) {
     }
   };
 
-  const generatePlan = async () => {
+  const startPlannerFlow = () => {
     if (!startDate || !endDate) {
       Alert.alert('Trip dates required', 'Please select your start and end dates.');
       return;
     }
-
-    const phases = [
-      'Fetching best attractions...',
-      'Optimizing route with TSP heuristics...',
-      'Balancing daily schedule...',
-      'Matching budget and smart stops...',
-      'Finalizing your itinerary...',
-    ];
-
-    setIsPlanningTrip(true);
-    setPlanningProgress(8);
-    let phaseIndex = 0;
-    const progressTimer = setInterval(() => {
-      phaseIndex = (phaseIndex + 1) % phases.length;
-      setPlanningStep(phases[phaseIndex]);
-      setPlanningProgress((prev) => Math.min(prev + 18, 92));
-    }, 850);
-
-    try {
-      // Use already-selected location if available; only fetch live GPS as fallback
-      let resolvedLocation = fromSelectedPlace;
-      if (!resolvedLocation) {
-        const liveLocation = await requestLiveLocation();
-        const areaName = await reverseGeocodeWithPhoton(
-          liveLocation.latitude,
-          liveLocation.longitude
-        ).catch(() => 'Current Location');
-        resolvedLocation = { ...liveLocation, label: areaName || 'Current Location' };
-        setFromSelectedPlace(resolvedLocation);
-        setFromLocation(resolvedLocation.label);
-      }
-
-      const itinerary = await generateSmartItinerary({
-        fromLocation: {
-          mode: resolvedLocation.source === 'live' ? 'live' : 'selected',
-          text: resolvedLocation.label,
-          selected: resolvedLocation,
-        },
-        startDate,
-        endDate,
-        budget,
-      });
-
-      await saveTrip(itinerary);
-      setPlanningProgress(100);
-      setPlanningStep('Trip ready! Opening your Trips section...');
-      setTimeout(() => {
-        setIsPlanningTrip(false);
-        navigation.navigate('Trips');
-      }, 380);
-    } catch (error) {
-      setIsPlanningTrip(false);
-      Alert.alert('Unable to generate trip', error.message || 'Please try again.');
-    } finally {
-      clearInterval(progressTimer);
-    }
+    setPlannerView('planning');
   };
 
   return (
@@ -744,24 +693,25 @@ export default function HomeScreen({ styles }) {
             </Pressable>
           </Pressable>
         </Modal>
-        <Modal visible={isPlanningTrip} transparent animationType="fade">
-          <View style={localStyles.planningOverlay}>
-            <View style={localStyles.planningCard}>
-              <View style={localStyles.planningSpinner}>
-                <ActivityIndicator size="large" color="#FF6B6B" />
-              </View>
-              <Text style={localStyles.planningTitle}>Creating your smart itinerary</Text>
-              <Text style={localStyles.planningSubtitle}>{planningStep}</Text>
-              <View style={localStyles.progressTrack}>
-                <View style={[localStyles.progressFill, { width: `${planningProgress}%` }]} />
-              </View>
-              <Text style={localStyles.progressText}>{planningProgress}% complete</Text>
-            </View>
-          </View>
-        </Modal>
-        <View style={styles.screenBody}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.homeScrollContent}>
-            <View style={styles.homeHero}>
+        <View style={[styles.screenBody, plannerView === 'planning' && localStyles.plannerScreenBody]}>
+          {plannerView === 'planning' ? (
+            <TripPlannerScreen
+              fromLocation={fromLocation}
+              fromSelectedPlace={fromSelectedPlace}
+              startDate={startDate}
+              endDate={endDate}
+              budget={budget}
+              triggerHaptic={triggerHaptic}
+              onBack={() => setPlannerView('form')}
+              onTripSaved={async () => {
+                setPlannerView('form');
+                navigation.navigate('Trips');
+              }}
+            />
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.homeScrollContent}>
+              <>
+              <View style={styles.homeHero}>
               <View style={styles.homeHeroHeaderRow}>
                 <View style={styles.homeHeroBadge}>
                   <Ionicons name="map-outline" size={12} color="#0F2044" />
@@ -808,11 +758,11 @@ export default function HomeScreen({ styles }) {
               
 
               <View style={styles.inputBlock}>
-                <Text style={styles.inputLabel}>From</Text>
+                <Text style={styles.inputLabel}>Destination</Text>
                 <View style={styles.inputRow}>
                   <Ionicons name="navigate-outline" size={18} color="#FF6B6B" style={styles.inputIcon} />
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, localStyles.fromInputWithLiveButton]}
                     placeholder="Current location / city / landmark"
                     placeholderTextColor="#94A3B8"
                     value={fromLocation}
@@ -824,6 +774,16 @@ export default function HomeScreen({ styles }) {
                       setActiveSuggestionField('from');
                     }}
                   />
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={localStyles.liveLocationButton}
+                    onPress={() => {
+                      triggerHaptic('light');
+                      useLiveFromLocation();
+                    }}
+                  >
+                    <Ionicons name="locate" size={16} color="#0EA5E9" />
+                  </TouchableOpacity>
                 </View>
                 {activeSuggestionField === 'from' && fromSuggestions.length > 0 && (
                   <View style={localStyles.suggestionCard}>
@@ -869,15 +829,21 @@ export default function HomeScreen({ styles }) {
                 </View>
               </View>
 
-              <TouchableOpacity activeOpacity={0.92} style={styles.planButtonWrap} onPress={generatePlan}>
+              <TouchableOpacity
+                activeOpacity={0.92}
+                style={styles.planButtonWrap}
+                onPress={startPlannerFlow}
+              >
                 <LinearGradient
                   colors={['#FF6B6B', '#FF8E53']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.planButton}
                 >
-                  <Ionicons name="airplane-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.planButtonText}>Plan my Trip</Text>
+                  <>
+                    <Ionicons name="airplane-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.planButtonText}>Plan my Trip</Text>
+                  </>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -1055,7 +1021,9 @@ export default function HomeScreen({ styles }) {
                 </View>
               ))}
             </View>
-          </ScrollView>
+              </>
+            </ScrollView>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -1071,8 +1039,288 @@ function formatTripDurationDays(trip) {
 }
 
 const localStyles = StyleSheet.create({
+  plannerScreenBody: {
+    paddingHorizontal: 0,
+  },
+  fromInputWithLiveButton: {
+    paddingRight: 42,
+  },
+  liveLocationButton: {
+    position: 'absolute',
+    right: 10,
+    top: 14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   essentialsSection: {
     marginTop: 14,
+  },
+  planningFlowContainer: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    marginTop: 4,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  planningHeroCard: {
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  planningBackButton: {
+    alignSelf: 'flex-start',
+    minHeight: 32,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  planningBackText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  planningFlowTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  planningFlowSubtitle: {
+    marginTop: 4,
+    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  planningMetaRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  planningMetaChip: {
+    minHeight: 28,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  planningMetaText: {
+    color: '#E2E8F0',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  modeTabs: {
+    position: 'relative',
+    flexDirection: 'row',
+    gap: 10,
+    padding: 3,
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 10,
+  },
+  modeTabIndicator: {
+    position: 'absolute',
+    left: 3,
+    top: 3,
+    bottom: 3,
+    borderRadius: 12,
+    backgroundColor: 'rgba(225,29,72,0.09)',
+    borderWidth: 1,
+    borderColor: 'rgba(225,29,72,0.2)',
+  },
+  modeTab: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 14,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    zIndex: 2,
+  },
+  modeTabActive: {
+    backgroundColor: 'transparent',
+  },
+  modeTabPressed: {
+    transform: [{ scale: 0.98 }],
+  },
+  modeTabText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  modeTabTextActive: {
+    color: '#E11D48',
+  },
+  selectionInfoCard: {
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+  },
+  selectionInfoContent: {
+    flex: 1,
+  },
+  selectionTitle: {
+    color: '#0F172A',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  selectionHint: {
+    color: '#334155',
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 17,
+  },
+  attractionListCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  attractionRow: {
+    minHeight: 62,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  attractionRowSelected: {
+    backgroundColor: 'rgba(34,197,94,0.09)',
+  },
+  attractionRowPressed: {
+    transform: [{ scale: 0.992 }],
+    backgroundColor: '#F8FAFC',
+  },
+  rankBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankBadgeText: {
+    color: '#475569',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  attractionRowMain: {
+    flex: 1,
+  },
+  attractionName: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  attractionMeta: {
+    marginTop: 1,
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emptyAttractionsText: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 12,
+  },
+  autoInfoCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    padding: 13,
+    marginBottom: 10,
+  },
+  autoInfoTitle: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  autoInfoText: {
+    marginTop: 5,
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  autoInfoPoints: {
+    marginTop: 10,
+    gap: 6,
+  },
+  autoInfoPoint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  autoInfoPointText: {
+    color: '#334155',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  proceedButton: {
+    marginTop: 10,
+    minHeight: 50,
+    borderRadius: 14,
+    backgroundColor: '#E11D48',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    shadowColor: '#E11D48',
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  proceedButtonDisabled: {
+    opacity: 0.45,
+  },
+  proceedButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
   },
   suggestionCard: {
     marginTop: 8,
@@ -1455,5 +1703,6 @@ const localStyles = StyleSheet.create({
     fontWeight: '800',
   },
 });
+
 
 

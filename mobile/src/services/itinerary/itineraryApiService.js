@@ -13,6 +13,19 @@ export async function generateTripDraftApi(payload) {
   }
 }
 
+export async function fetchAttractionsPreviewApi(payload) {
+  try {
+    const response = await apiClient.post('/api/trips/attractions-preview', payload);
+    return {
+      city: response.data?.city || '',
+      from: response.data?.from || null,
+      attractions: response.data?.attractions || [],
+    };
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Failed to fetch attractions.'));
+  }
+}
+
 export async function createTripApi(payload) {
   try {
     const response = await apiClient.post('/api/trips', payload);

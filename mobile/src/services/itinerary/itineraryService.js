@@ -2,10 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requestLiveLocation } from '../maps/locationService';
 import { geocodeWithPhoton, reverseGeocodeWithPhoton } from '../maps/googleGeocodingService';
 import { buildFallbackMatrix, getOsrmDistanceMatrix } from '../maps/googleRoutingService';
-import { getNearbyAmenities, getNearbyAttractions } from '../maps/googlePlacesService';
+import { getCityTopAttractions, getNearbyAmenities } from '../maps/googlePlacesService';
 import {
   createTripApi,
   deleteTripApi,
+  fetchAttractionsPreviewApi,
   generateTripDraftApi,
   listExploreTripsApi,
   listLatestTripsApi,
@@ -32,8 +33,7 @@ const CATEGORY_VISIT_MINUTES = {
   viewpoint: 35,
   default: 50,
 };
-const MAX_ATTRACTION_RADIUS_METERS = 50000;
-const MAX_ATTRACTIONS_TO_FETCH = 120;
+const MAX_ATTRACTIONS_TO_FETCH = 50;
 const MAX_STOPS_PER_DAY = 7;
 const MAX_RECOMMENDATION_ENRICHED_STOPS = 36;
 const AMENITY_LOOKUP_TIMEOUT_MS = 3500;
@@ -361,6 +361,45 @@ function looksCommercialOrTransit(stopLabel = '') {
   return ['market', 'mall', 'station', 'terminal', 'bazaar', 'downtown', 'center'].some((word) => text.includes(word));
 }
 
+function isExcludedStayFoodTransitPlace(place = {}) {
+  const label = String(place?.label || place?.name || '').toLowerCase();
+  const category = String(place?.category || '').toLowerCase();
+  const tourism = String(place?.tags?.tourism || '').toLowerCase();
+  const placeTypes = Array.isArray(place?.tags?.placeTypes) ? place.tags.placeTypes.map((t) => String(t).toLowerCase()) : [];
+
+  const typeBlocked = placeTypes.some((type) =>
+    ['restaurant', 'food', 'cafe', 'meal_takeaway', 'meal_delivery', 'lodging', 'train_station', 'subway_station', 'transit_station', 'bus_station'].includes(type)
+  );
+  if (typeBlocked) {
+    return true;
+  }
+
+  const keywordBlocked = [
+    'restaurant',
+    'railway station',
+    'train station',
+    'metro station',
+    'junction',
+    'hotel',
+    'resort',
+    'guest house',
+    'guesthouse',
+    'hostel',
+    'inn',
+    'stay',
+    'stays',
+  ].some((word) => label.includes(word));
+
+  return (
+    keywordBlocked ||
+    category === 'restaurant' ||
+    category === 'hotel' ||
+    category === 'lodging' ||
+    tourism === 'hotel' ||
+    tourism === 'hostel'
+  );
+}
+
 async function getDistanceMatrix(points) {
   try {
     return await getOsrmDistanceMatrix(points);
@@ -386,6 +425,25 @@ function fallbackAttractions(targetLocation, count) {
     category: index % 3 === 0 ? 'museum' : 'attraction',
     tags: {},
   }));
+}
+
+function normalizeSelectedAttractions(selectedAttractions = []) {
+  return selectedAttractions
+    .filter((item) => Number.isFinite(item?.latitude) && Number.isFinite(item?.longitude))
+    .filter((item) => !isExcludedStayFoodTransitPlace(item))
+    .map((item, index) => ({
+      id: String(item.id || `manual-${index + 1}`),
+      label: String(item.label || `Selected Place ${index + 1}`),
+      latitude: Number(item.latitude),
+      longitude: Number(item.longitude),
+      imageUrl: String(item.imageUrl || ''),
+      category: item.category || inferCategoryFromAttraction(item),
+      tags: {
+        ...(item.tags || {}),
+        tourism: item.tags?.tourism || 'attraction',
+        placeTypes: Array.isArray(item.tags?.placeTypes) ? item.tags.placeTypes : [],
+      },
+    }));
 }
 
 async function resolveLocationInput(input, role) {
@@ -705,6 +763,28 @@ export async function removeSavedTripForUser(tripId) {
   }
 }
 
+export async function fetchCityAttractionsPreview(payload) {
+  try {
+    return await fetchAttractionsPreviewApi(payload);
+  } catch (_error) {
+    const fromInput = await resolveLocationInput(payload?.fromLocation || {}, 'from');
+    const cityName =
+      String(payload?.fromLocation?.text || '').trim() ||
+      String(payload?.fromLocation?.selected?.label || '').trim() ||
+      fromInput?.label ||
+      'Local Area';
+    const attractions = await getCityTopAttractions({
+      cityName,
+      limit: Math.max(10, Math.min(50, Number(payload?.limit || 50))),
+    }).catch(() => []);
+    return {
+      city: cityName,
+      from: fromInput,
+      attractions,
+    };
+  }
+}
+
 export async function generateSmartItinerary(payload) {
   try {
     const draft = await generateTripDraftApi(payload);
@@ -740,21 +820,25 @@ export async function generateSmartItinerary(payload) {
   const endDate = payload.endDate || startDate;
   const durationDays = getDaysInclusive(startDate, endDate);
   const maxTotalStopsForTrip = Math.max(1, durationDays * MAX_STOPS_PER_DAY);
-  // Fetch real attractions using max supported nearby radius before using fallback.
+  const hasProvidedAttractions = Array.isArray(payload?.selectedAttractions) && payload.selectedAttractions.length > 0;
+  const cityContext = canonicalFromLabel || from.label || 'Local Area';
+  // Fetch top attractions city-wise, unless manual place selection is provided.
   let attractions = [];
-  try {
-    const nearby = await getNearbyAttractions({
-      latitude: center.latitude,
-      longitude: center.longitude,
-      radiusMeters: MAX_ATTRACTION_RADIUS_METERS,
-      limit: Math.min(MAX_ATTRACTIONS_TO_FETCH, maxTotalStopsForTrip),
-    });
-    attractions = nearby.map((item) => ({
-      ...item,
-      category: inferCategoryFromAttraction(item),
-    }));
-  } catch (_error) {
-    attractions = [];
+  if (hasProvidedAttractions) {
+    attractions = normalizeSelectedAttractions(payload.selectedAttractions).slice(0, MAX_ATTRACTIONS_TO_FETCH);
+  } else {
+    try {
+      const nearby = await getCityTopAttractions({
+        cityName: cityContext,
+        limit: MAX_ATTRACTIONS_TO_FETCH,
+      });
+      attractions = nearby.map((item) => ({
+        ...item,
+        category: inferCategoryFromAttraction(item),
+      }));
+    } catch (_error) {
+      attractions = [];
+    }
   }
 
   if (!attractions.length) {
