@@ -379,6 +379,7 @@ export async function getNearbyAttractions({ latitude, longitude, radiusMeters =
   // Deduplicate by place_id and require a name
   const seen = new Set();
   const deduped = combined.filter((p) => p.name && !seen.has(p.place_id) && seen.add(p.place_id));
+
   const strictPublic = deduped
     .filter((place) => isLikelyPublicAttraction(place))
     .filter((place) => Number(place.user_ratings_total || 0) >= 20 && Number(place.rating || 0) >= 3.8)
@@ -394,6 +395,17 @@ export async function getNearbyAttractions({ latitude, longitude, radiusMeters =
   return publicFallback.slice(0, limit).map(normalizeGooglePlace);
 }
 
+function haversineDistanceKm(a, b) {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(b.latitude - a.latitude);
+  const dLon = toRad(b.longitude - a.longitude);
+  const q =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude));
+  return R * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q));
+}
+
 export async function getCityTopAttractions({ cityName, limit = 240 }) {
   const queryResults = await Promise.allSettled(
     buildCityAttractionQueries(cityName)
@@ -405,6 +417,7 @@ export async function getCityTopAttractions({ cityName, limit = 240 }) {
 
   const seen = new Set();
   const deduped = combined.filter((p) => p.name && !seen.has(p.place_id) && seen.add(p.place_id));
+
   const strictPublic = deduped
     .filter((place) => isLikelyPublicAttraction(place))
     .filter((place) => Number(place.user_ratings_total || 0) >= 20 && Number(place.rating || 0) >= 3.8)

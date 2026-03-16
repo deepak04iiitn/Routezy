@@ -6,12 +6,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const APP_LOGO = require('../../../assets/Logo.png');
 
-export default function ScreenTopBar({ activeRoute, styles }) {
+export default function ScreenTopBar({ activeRoute, styles, onCustomBack }) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const isHome = activeRoute === 'Home';
 
   const onBackPress = () => {
+    if (onCustomBack) {
+      onCustomBack();
+      return;
+    }
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
@@ -30,9 +34,13 @@ export default function ScreenTopBar({ activeRoute, styles }) {
         </View>
         <Pressable
           onPress={onBackPress}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed, isHome && styles.backButtonDisabled]}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.backButtonPressed,
+            isHome && !onCustomBack && styles.backButtonDisabled,
+          ]}
         >
-          <Ionicons name="chevron-back" size={22} color={isHome ? '#C7CFDA' : '#0F2044'} />
+          <Ionicons name="chevron-back" size={22} color={(isHome && !onCustomBack) ? '#C7CFDA' : '#0F2044'} />
         </Pressable>
         <Image source={APP_LOGO} style={styles.topBarLogo} resizeMode="contain" />
       </View>

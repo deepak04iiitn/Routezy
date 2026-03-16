@@ -635,7 +635,11 @@ export default function HomeScreen({ styles }) {
   return (
     <SafeAreaView style={[styles.screenSafe, localStyles.premiumRoot]} edges={['left', 'right']}>
       <View style={styles.screenContent}>
-        <ScreenTopBar activeRoute="Home" styles={styles} />
+        <ScreenTopBar
+          activeRoute="Home"
+          styles={styles}
+          onCustomBack={plannerView === 'planning' ? () => setPlannerView('form') : null}
+        />
         
         <Modal visible={isFetchingLocation} transparent animationType="fade">
           <View style={localStyles.loaderOverlay}>
@@ -893,6 +897,11 @@ export default function HomeScreen({ styles }) {
                       </TouchableOpacity>
                     </View>
                   </View>
+                  
+                  <Text style={localStyles.sliderHintText}>
+                    Select your destination, dates and budget to get started.
+                  </Text>
+
                   {!!durationDays && (
                     <Text style={localStyles.durationLabel}>
                       Duration: {durationDays} day{durationDays > 1 ? 's' : ''}
@@ -1305,6 +1314,66 @@ const localStyles = StyleSheet.create({
     position: 'absolute',
     right: 10,
     top: 20,
+  },
+  sliderFieldBlock: {
+    marginTop: 18,
+    marginBottom: 4,
+  },
+  sliderHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sliderValueText: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  sliderTrackWrap: {
+    height: 32,
+    justifyContent: 'center',
+    position: 'relative',
+    marginBottom: 6,
+  },
+  sliderTrackBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E2E8F0',
+    width: '100%',
+    position: 'absolute',
+  },
+  sliderTrackFill: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF6B6B',
+    position: 'absolute',
+    left: 0,
+  },
+  sliderThumbNative: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#FF6B6B',
+    position: 'absolute',
+    marginLeft: -12,
+    shadowColor: '#FF6B6B',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  sliderHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sliderHintText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
   },
   premiumPlanButtonWrap: {
     marginTop: 12,

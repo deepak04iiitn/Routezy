@@ -170,7 +170,6 @@ export function validateItineraryGenerationPayload(payload) {
 export function validateAttractionPreviewPayload(payload) {
   const errors = [];
   const fromLocation = payload?.fromLocation || {};
-  const limitRaw = Number(payload?.limit);
   const limit = Number.isFinite(limitRaw) ? Math.max(10, Math.min(50, Math.floor(limitRaw))) : 50;
 
   validateLocationInput(fromLocation, 'From', errors);
@@ -180,6 +179,7 @@ export function validateAttractionPreviewPayload(payload) {
     value: {
       fromLocation,
       limit,
+      radius,
     },
   };
 }

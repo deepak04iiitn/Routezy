@@ -1160,6 +1160,8 @@ export async function generateItineraryPlan(payload) {
       attractions = await getCityTopAttractions({
         cityName: cityContext,
         limit: MAX_ATTRACTIONS_TO_FETCH,
+        radius: payload?.radius || 0,
+        center,
       });
     } catch (_error) {
       attractions = [];

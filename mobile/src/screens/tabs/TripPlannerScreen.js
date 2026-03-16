@@ -3,8 +3,10 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  FlatList,
   Image,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -72,6 +74,55 @@ function isExcludedStayFoodTransitPlace(place) {
     tourism === 'hostel'
   );
 }
+
+const AttractionItem = React.memo(({ place, index, selected, onToggle, triggerHaptic, entranceAnim, styles }) => {
+  const { rating, reviews } = formatMeta(place);
+  
+  const rowOpacity = entranceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+  const rowTranslate = entranceAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [8, 0],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        opacity: rowOpacity,
+        transform: [{ translateY: rowTranslate }],
+      }}
+    >
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={[styles.attractionCard, !selected && styles.attractionCardUnselected]}
+        onPress={() => {
+          triggerHaptic?.('light');
+          onToggle(place.id);
+        }}
+      >
+        <Image 
+          source={{ uri: getAttractionImage(place, index) }} 
+          style={[styles.attractionImage, !selected && styles.attractionImageUnselected]} 
+        />
+        <View style={styles.attractionMain}>
+          <Text numberOfLines={1} style={[styles.attractionTitle, !selected && styles.attractionTitleUnselected]}>
+            {place.label}
+          </Text>
+          <View style={styles.ratingRow}>
+            <Ionicons name='star' size={12} color='#FBBF24' />
+            <Text style={styles.ratingValue}>{rating}</Text>
+            <Text style={styles.reviewText}>({reviews})</Text>
+          </View>
+        </View>
+        <View style={[styles.selectBtn, selected ? styles.selectBtnActive : styles.selectBtnIdle]}>
+          <Ionicons name={selected ? 'checkmark' : 'add'} size={14} color={selected ? '#FFFFFF' : '#94A3B8'} />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
 
 export default function TripPlannerScreen({
   fromLocation,
@@ -283,73 +334,33 @@ export default function TripPlannerScreen({
     }
   };
 
-  const renderAttractions = () => {
-    const places = displayedAttractions;
-    if (!places.length) {
-      return <Text style={styles.emptyText}>No attractions found for this city.</Text>;
-    }
+  const toggleAttraction = useCallback((id) => {
+    setSelectedAttractionIds((prev) =>
+      prev.includes(id) ? prev.filter((existingId) => existingId !== id) : [...prev, id]
+    );
+  }, []);
 
-    return places.map((place, index) => {
-      const selected = selectedAttractionIds.includes(place.id);
-      const { rating, reviews } = formatMeta(place);
-      const rowOpacity = entranceAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
-      });
-      const rowTranslate = entranceAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [8, 0],
-      });
+  const renderItem = useCallback(({ item, index }) => {
+    const selected = selectedAttractionIds.includes(item.id);
+    return (
+      <AttractionItem
+        place={item}
+        index={index}
+        selected={selected}
+        onToggle={toggleAttraction}
+        triggerHaptic={triggerHaptic}
+        entranceAnim={entranceAnim}
+        styles={styles}
+      />
+    );
+  }, [selectedAttractionIds, toggleAttraction, triggerHaptic, entranceAnim, styles]);
 
-      return (
-        <Animated.View
-          key={place.id}
-          style={{
-            opacity: rowOpacity,
-            transform: [{ translateY: rowTranslate }],
-          }}
-        >
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={[styles.attractionCard, !selected && styles.attractionCardUnselected]}
-            onPress={() => {
-              triggerHaptic?.('light');
-              setSelectedAttractionIds((prev) =>
-                prev.includes(place.id) ? prev.filter((id) => id !== place.id) : [...prev, place.id]
-              );
-            }}
-          >
-            <Image source={{ uri: getAttractionImage(place, index) }} style={[styles.attractionImage, !selected && styles.attractionImageUnselected]} />
-            <View style={styles.attractionMain}>
-              <Text numberOfLines={1} style={[styles.attractionTitle, !selected && styles.attractionTitleUnselected]}>
-                {place.label}
-              </Text>
-              <View style={styles.ratingRow}>
-                <Ionicons name='star' size={12} color='#FBBF24' />
-                <Text style={styles.ratingValue}>{rating}</Text>
-                <Text style={styles.reviewText}>({reviews})</Text>
-              </View>
-              {/* <Text numberOfLines={1} style={styles.categoryText}>History Â· Art Â· Landmarks</Text> */}
-            </View>
-            <View style={[styles.selectBtn, selected ? styles.selectBtnActive : styles.selectBtnIdle]}>
-              <Ionicons name={selected ? 'checkmark' : 'add'} size={14} color={selected ? '#FFFFFF' : '#94A3B8'} />
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      );
-    });
-  };
+  /* renderAttractions removed */
 
   return (
     <View style={styles.screen}>
       <View style={styles.headerWrap}>
-        {/* <View style={styles.topRow}>
-          <TouchableOpacity activeOpacity={0.9} style={styles.backBtn} onPress={onBack}>
-            <Ionicons name='arrow-back' size={20} color='#0f2044' />
-          </TouchableOpacity>
-          <Text style={styles.pageTitle}>Plan Your City Trip</Text>
-          <View style={styles.spacer} />
-        </View> */}
+
 
         <LinearGradient colors={['#0f2044', '#1e293b']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
           <Ionicons name='compass' size={96} color='rgba(255,255,255,0.10)' style={styles.heroIcon} />
@@ -377,71 +388,87 @@ export default function TripPlannerScreen({
           </Pressable>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.mainContent}>
-          {planningMode === 'manual' ? (
+        <FlatList
+          data={planningMode === 'manual' ? displayedAttractions : []}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.mainContent}
+          initialNumToRender={8}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === 'android'}
+          ListHeaderComponent={
             <>
-              <TouchableOpacity
-                activeOpacity={0.9}
-                style={styles.manualGuideToggle}
-                onPress={() => setIsManualGuideOpen((prev) => !prev)}
-              >
-                <View style={styles.manualGuideToggleLeft}>
-                  <View style={styles.manualGuideToggleIconWrap}>
-                    <Ionicons name='map-outline' size={16} color='#ff6b6b' />
-                  </View>
-                  <View>
-                    <Text style={styles.manualGuideToggleTitle}>See how to plan beautifully</Text>
-                    <Text style={styles.manualGuideToggleSubtitle}>
-                      Tap to {isManualGuideOpen ? 'hide' : 'view'} quick planning tips
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons
-                  name={isManualGuideOpen ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  color='#334155'
-                />
-              </TouchableOpacity>
+              {planningMode === 'manual' ? (
+                <>
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    style={styles.manualGuideToggle}
+                    onPress={() => setIsManualGuideOpen((prev) => !prev)}
+                  >
+                    <View style={styles.manualGuideToggleLeft}>
+                      <View style={styles.manualGuideToggleIconWrap}>
+                        <Ionicons name='map-outline' size={16} color='#ff6b6b' />
+                      </View>
+                      <View>
+                        <Text style={styles.manualGuideToggleTitle}>See how to plan beautifully</Text>
+                        <Text style={styles.manualGuideToggleSubtitle}>
+                          Tap to {isManualGuideOpen ? 'hide' : 'view'} quick planning tips
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons
+                      name={isManualGuideOpen ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color='#334155'
+                    />
+                  </TouchableOpacity>
 
-              {isManualGuideOpen ? (
-                <View style={styles.instructionsCard}>
-                  <View style={styles.instructionsHead}>
-                    <Ionicons name='bulb-outline' size={18} color='#ff6b6b' />
-                    <Text style={styles.instructionsTitle}>How Manual Planning with TripZo</Text>
-                  </View>
-                  <InstructionRow index={1} text='TripZo lines up the city highlights first, you just tap your vibe.' />
-                  <InstructionRow index={2} text='We auto-shape the shortest practical route with minimal backtracking.' />
-                  <InstructionRow index={3} text='Plus smart recommendations for restaurants, ATMs, and washrooms on route.' />
-                </View>
-              ) : null}
+                  {isManualGuideOpen ? (
+                    <View style={styles.instructionsCard}>
+                      <View style={styles.instructionsHead}>
+                        <Ionicons name='bulb-outline' size={18} color='#ff6b6b' />
+                        <Text style={styles.instructionsTitle}>How Manual Planning with TripZo</Text>
+                      </View>
+                      <InstructionRow index={1} text='TripZo lines up the city highlights first, you just tap your vibe.' />
+                      <InstructionRow index={2} text='We auto-shape the shortest practical route with minimal backtracking.' />
+                      <InstructionRow index={3} text='Plus smart recommendations for restaurants, ATMs, and washrooms on route.' />
+                    </View>
+                  ) : null}
 
-              <Text style={styles.sectionTitle}>Popular Places</Text>
-              <View style={styles.listWrap}>{renderAttractions()}</View>
+                  <Text style={styles.sectionTitle}>Popular Places</Text>
+                  {!displayedAttractions.length && (
+                    <Text style={styles.emptyText}>No attractions found for this city.</Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  <View style={styles.instructionsCard}>
+                    <View style={styles.instructionsHead}>
+                      <Ionicons name='flash-outline' size={18} color='#ff6b6b' />
+                      <Text style={styles.instructionsTitle}>Why automatic planning with TripZo</Text>
+                    </View>
+                    <InstructionRow index={1} text='TripZo auto-selects the best attractions from the city list.' />
+                    <InstructionRow index={2} text='We generate a shortest-route itinerary for smoother and faster travel.' />
+                    <InstructionRow index={3} text='You also get recommendations for restaurants, ATMs, and washrooms.' />
+                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.92}
+                    style={styles.tabGenerateButton}
+                    onPress={() => generatePlan('auto')}
+                  >
+                    <Text style={styles.tabGenerateButtonText}>Generate Optimized Itinerary</Text>
+                    <Ionicons name='git-network-outline' size={16} color='#FFFFFF' />
+                  </TouchableOpacity>
+                </>
+              )}
             </>
-          ) : (
-            <>
-              <View style={styles.instructionsCard}>
-                <View style={styles.instructionsHead}>
-                  <Ionicons name='flash-outline' size={18} color='#ff6b6b' />
-                  <Text style={styles.instructionsTitle}>Why automatic planning with TripZo</Text>
-                </View>
-                <InstructionRow index={1} text='TripZo auto-selects the best attractions from the city list.' />
-                <InstructionRow index={2} text='We generate a shortest-route itinerary for smoother and faster travel.' />
-                <InstructionRow index={3} text='You also get recommendations for restaurants, ATMs, and washrooms.' />
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.92}
-                style={styles.tabGenerateButton}
-                onPress={() => generatePlan('auto')}
-              >
-                <Text style={styles.tabGenerateButtonText}>Generate Optimized Itinerary</Text>
-                <Ionicons name='git-network-outline' size={16} color='#FFFFFF' />
-              </TouchableOpacity>
-            </>
-          )}
-
-          <View style={[styles.bottomSpacer, planningMode === 'manual' && styles.bottomSpacerManual]} />
-        </ScrollView>
+          }
+          ListFooterComponent={
+            <View style={[styles.bottomSpacer, planningMode === 'manual' && styles.bottomSpacerManual]} />
+          }
+        />
       </View>
 
       {planningMode === 'manual' && !isLoadingAttractionPreview ? (
