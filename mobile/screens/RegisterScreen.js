@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -35,6 +36,7 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAgreed, setIsAgreed] = useState(false);
 
   const responsiveStyles = useMemo(() => {
     return {
@@ -46,6 +48,11 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
   const submit = async () => {
     if (!email.trim() || !password) {
       setError('Please enter your email and password.');
+      return;
+    }
+
+    if (!isAgreed) {
+      setError('Please agree to the Terms & Conditions and Privacy Policy.');
       return;
     }
 
@@ -160,9 +167,9 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
               {!!error && <Text style={styles.error}>{error}</Text>}
 
               <TouchableOpacity
-                style={[styles.buttonWrap, isLoading && styles.buttonDisabled]}
+                style={[styles.buttonWrap, (isLoading || !isAgreed) && styles.buttonDisabled]}
                 onPress={submit}
-                disabled={isLoading}
+                disabled={isLoading || !isAgreed}
                 activeOpacity={0.9}
               >
                 <LinearGradient
@@ -174,6 +181,37 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
                   <Text style={styles.buttonText}>{isLoading ? 'Creating...' : 'Sign Up'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
+              
+              <View style={styles.legalDisclaimer}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={styles.checkboxContainer}
+                  onPress={() => setIsAgreed((prev) => !prev)}
+                >
+                  <Ionicons
+                    name={isAgreed ? 'checkbox' : 'square-outline'}
+                    size={20}
+                    color={isAgreed ? palette.primary : palette.muted}
+                  />
+                </TouchableOpacity>
+                <Text style={[styles.legalText, { color: palette.muted }]}>
+                  By continuing, you agree to our{' '}
+                  <Text
+                    style={styles.legalLink}
+                    onPress={() => Linking.openURL('https://tripzo-privacy-policy-terms-conditi.vercel.app/terms-and-conditions')}
+                  >
+                    Terms & Conditions
+                  </Text>
+                  {' '}and acknowledge that you have read our{' '}
+                  <Text
+                    style={styles.legalLink}
+                    onPress={() => Linking.openURL('https://tripzo-privacy-policy-terms-conditi.vercel.app/')}
+                  >
+                    Privacy Policy
+                  </Text>
+                  .
+                </Text>
+              </View>
 
               <View style={styles.footer}>
                 <Text style={[styles.link, { color: palette.muted }]}>
@@ -337,6 +375,27 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontWeight: '500',
     textAlign: 'center',
+  },
+  legalDisclaimer: {
+    marginTop: 16,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  checkboxContainer: {
+    padding: 2,
+  },
+  legalText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: '#3B82F6',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
 
