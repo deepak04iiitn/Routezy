@@ -4,8 +4,15 @@ const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 export function validateSignupPayload(payload) {
   const errors = [];
 
+  const fullName = payload?.fullName?.trim() || '';
   const email = payload?.email?.trim()?.toLowerCase();
   const password = payload?.password;
+  const securityQuestion = (payload?.securityQuestion || '').trim();
+  const securityAnswer = (payload?.securityAnswer || '').trim();
+
+  if (!fullName || fullName.length < 2 || fullName.length > 80) {
+    errors.push('Full name must be between 2 and 80 characters.');
+  }
 
   if (!email || !EMAIL_REGEX.test(email)) {
     errors.push('Please provide a valid email address.');
@@ -15,7 +22,24 @@ export function validateSignupPayload(payload) {
     errors.push('Password must be at least 8 characters and include letters and numbers.');
   }
 
-  return { errors, value: { email, password } };
+  if (!securityQuestion || securityQuestion.length < 6) {
+    errors.push('Security question must be at least 6 characters.');
+  }
+
+  if (!securityAnswer || securityAnswer.length < 2) {
+    errors.push('Security answer must be at least 2 characters.');
+  }
+
+  return {
+    errors,
+    value: {
+      fullName,
+      email,
+      password,
+      securityQuestion,
+      securityAnswer,
+    },
+  };
 }
 
 export function validateSigninPayload(payload) {

@@ -17,7 +17,7 @@ import Svg2 from '../assets/svg-2.svg';
 
 const { width, height } = Dimensions.get('window');
 
-// ── Coastal Light palette (PRD §09) ───────────────────────────────────────
+// â”€â”€ Coastal Light palette (PRD Â§09) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CORAL        = '#FF6B6B';
 const TANGERINE    = '#FF8E53';
 const AMBER        = '#FFC947';
@@ -25,7 +25,7 @@ const NAVY_MID     = '#1E3A6E';
 const INK_MID      = '#374151';
 const INK_SOFT     = '#6B7280';
 const DOT_INACTIVE = '#E2E8F2';
-// ─────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const slides = [
   {
@@ -34,7 +34,7 @@ const slides = [
     titleLight: 'EXPLORE MORE,',
     titleBold:  'WASTE LESS TIME.',
     description:
-      "Stop wasting hours planning routes. TripZo acts like your personal travel guide - building optimized itineraries and showing the best path while recommending nearby restaurants, washrooms, ATMs, and medical stores along the way.",
+      "Stop wasting hours planning routes. Routezy acts like your personal travel guide - building optimized itineraries and showing the best path while recommending nearby restaurants, washrooms, ATMs, and medical stores along the way.",
   },
   {
     id: '2',
@@ -42,7 +42,7 @@ const slides = [
     titleLight: 'YOUR PERFECT TRIP,',
     titleBold:  'FULLY AUTOMATED.',
     description:
-    "TripZo plans every journey using 3-pillar RTC framework - Route Optimized, Time Optimized, and Cost Optimized - so you travel smarter, faster, and within your budget.",
+    "Routezy plans every journey using 3-pillar RTC framework - Route Optimized, Time Optimized, and Cost Optimized - so you travel smarter, faster, and within your budget.",
   },
 ];
 
@@ -65,7 +65,7 @@ export default function OnboardingScreen({ onFinish }) {
   };
 
   // navigateRef is updated every render so the PanResponder always reads
-  // the latest currentIndex — avoids the stale closure problem.
+  // the latest currentIndex â€” avoids the stale closure problem.
   const navigateRef = useRef(null);
   navigateRef.current = (dx) => {
     if (dx < -40) {
@@ -123,7 +123,7 @@ export default function OnboardingScreen({ onFinish }) {
         translucent={false}
       />
 
-      {/* Scrollable illustrations — taller than the sheet so they show above it */}
+      {/* Scrollable illustrations â€” taller than the sheet so they show above it */}
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -138,7 +138,7 @@ export default function OnboardingScreen({ onFinish }) {
         style={{ height: ILLUSTRATION_H }}
       />
 
-      {/* Bottom sheet — swipe gestures forwarded to FlatList via PanResponder */}
+      {/* Bottom sheet â€” swipe gestures forwarded to FlatList via PanResponder */}
       <View style={styles.whitePanel} {...panResponder.panHandlers}>
         <View style={styles.textArea}>
           <Text style={styles.slideIndex}>
@@ -149,7 +149,7 @@ export default function OnboardingScreen({ onFinish }) {
           <Text style={styles.description}>{slide.description}</Text>
         </View>
 
-        {/* Controls row — glued to bottom of same white surface */}
+        {/* Controls row â€” glued to bottom of same white surface */}
         <View style={styles.controlsRow}>
           <TouchableOpacity onPress={onFinish} style={styles.skipBtn} activeOpacity={0.7}>
             <Text style={styles.skipText}>Skip</Text>
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: CORAL,
   },
 
-  /* ── Illustration (scrollable, bleeds behind the sheet) ── */
+  /* â”€â”€ Illustration (scrollable, bleeds behind the sheet) â”€â”€ */
   illustrationArea: {
     width,
     height: ILLUSTRATION_H,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  /* ── Bottom sheet — absolutely anchored, overlaps illustration ── */
+  /* â”€â”€ Bottom sheet â€” absolutely anchored, overlaps illustration â”€â”€ */
   whitePanel: {
     position: 'absolute',
     bottom: 0,
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     minHeight: 92,
   },
 
-  /* ── Controls row — inside the white panel ── */
+  /* â”€â”€ Controls row â€” inside the white panel â”€â”€ */
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',

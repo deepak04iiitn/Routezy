@@ -26,7 +26,7 @@ import { SKELETON_GRADIENT_COLORS, useSkeletonShimmer } from '../../utils/skelet
 const ACCOUNT_PROFILE = {
   name: 'Alex Coastal',
   username: '@alex_travels',
-  email: 'alex.coastal@tripzo.com',
+  email: 'alex.coastal@routezy.com',
   avatar:
     'https://img.freepik.com/premium-vector/user-profile-icon-flat-style-member-avatar-vector-illustration-isolated-background-human-permission-sign-business-concept_157943-15752.jpg?semt=ais_hybrid&w=740&q=80',
 };
@@ -174,7 +174,7 @@ export default function AccountScreen({ user, onLogout, onDeleteAccount, styles 
       }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileUri = `${baseDir}tripzo-admin-metrics-${selectedRangeDays}d-${timestamp}.csv`;
+      const fileUri = `${baseDir}routezy-admin-metrics-${selectedRangeDays}d-${timestamp}.csv`;
 
       await FileSystem.writeAsStringAsync(fileUri, csvContent, {
         encoding: 'utf8',
@@ -188,7 +188,7 @@ export default function AccountScreen({ user, onLogout, onDeleteAccount, styles 
 
       await Sharing.shareAsync(fileUri, {
         mimeType: 'text/csv',
-        dialogTitle: 'Export TripZo Admin Metrics',
+        dialogTitle: 'Export Routezy Admin Metrics',
         UTI: 'public.comma-separated-values-text',
       });
     } catch (_error) {
@@ -209,11 +209,6 @@ export default function AccountScreen({ user, onLogout, onDeleteAccount, styles 
   );
 
   const saveProfile = async () => {
-    if (!fullName.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-
     const normalizedCurrentQuestion = securityQuestion.trim();
     const normalizedSavedQuestion = (profile?.securityQuestion || '').trim();
     const isQuestionChanged = normalizedCurrentQuestion !== normalizedSavedQuestion;
@@ -228,11 +223,16 @@ export default function AccountScreen({ user, onLogout, onDeleteAccount, styles 
     setError('');
     setSuccess('');
     try {
-      const response = await updateProfile({
-        fullName: fullName.trim(),
-        securityQuestion: securityQuestion.trim(),
+      const payload = {
+        securityQuestion: normalizedCurrentQuestion,
         securityAnswer: securityAnswer.trim(),
-      });
+      };
+      const normalizedFullName = fullName.trim();
+      if (normalizedFullName) {
+        payload.fullName = normalizedFullName;
+      }
+
+      const response = await updateProfile(payload);
       hydrateProfile(response.user);
       setSuccess('Profile updated successfully.');
     } catch (saveError) {
@@ -432,7 +432,7 @@ export default function AccountScreen({ user, onLogout, onDeleteAccount, styles 
                 <View style={adminStyles.heroTopRow}>
                   <View style={adminStyles.heroBadge}>
                     <Ionicons name="shield-checkmark-outline" size={12} color="#0F2044" />
-                    <Text style={adminStyles.heroBadgeText}>TripZo Admin</Text>
+                    <Text style={adminStyles.heroBadgeText}>Routezy Admin</Text>
                   </View>
                   {!!generatedAt && <Text style={adminStyles.lastUpdated}>Updated {generatedAt}</Text>}
                 </View>
@@ -651,7 +651,7 @@ export default function AccountScreen({ user, onLogout, onDeleteAccount, styles 
                   </View>
                   <View style={styles.accountRowBody}>
                     <Text style={styles.accountRowLabel}>Password</Text>
-                    <Text style={styles.accountRowValue}>••••••••••••</Text>
+                    <Text style={styles.accountRowValue}>*******************</Text>
                   </View>
                   
                 </View>

@@ -1,6 +1,6 @@
-# TripZo
+# Routezy
 
-TripZo is a smart travel planning platform built with an Expo React Native mobile app and a Node.js/Express backend. It helps travelers generate optimized itineraries, discover attractions, and manage trips from planning to completion.
+Routezy is a smart travel planning platform built with an Expo React Native mobile app and a Node.js/Express backend. It helps travelers generate optimized itineraries, discover attractions, and manage trips from planning to completion.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ TripZo is a smart travel planning platform built with an Expo React Native mobil
 
 ## Product Overview
 
-TripZo focuses on one core outcome: help users explore more places while reducing wasted travel time.
+Routezy focuses on one core outcome: help users explore more places while reducing wasted travel time.
 
 The app is designed to:
 - generate smart itineraries from location, time window, and budget
@@ -33,7 +33,7 @@ The app is designed to:
 
 ## Core MVP Features
 
-TripZo defines these MVP pillars:
+Routezy defines these MVP pillars:
 
 1. Smart itinerary generation
 2. Multi-day itinerary scheduling
@@ -64,7 +64,7 @@ Planned/future-expansion areas:
 
 ## Architecture
 
-TripZo uses a split architecture:
+Routezy uses a split architecture:
 
 - `mobile/`: Expo + React Native client
 - `server/`: Express API + MongoDB + Firebase Admin integrations
@@ -102,7 +102,7 @@ High-level flow:
 ## Project Structure
 
 ```text
-TripZo/
+Routezy/
   mobile/                  Expo React Native app
     app/                   Expo Router routes
     src/
@@ -138,7 +138,7 @@ TripZo/
 From repository root:
 
 ```powershell
-cd "C:\PERSONAL PROJECTS\TripZo"
+cd "C:\PERSONAL PROJECTS\Routezy"
 npm install
 cd mobile; npm install
 cd ..\server; npm install
@@ -207,7 +207,7 @@ For a full Firebase + Google Auth walkthrough, see `docs/Firebase_Google_Auth_Se
 ### Run both server and mobile (recommended)
 
 ```powershell
-cd "C:\PERSONAL PROJECTS\TripZo"
+cd "C:\PERSONAL PROJECTS\Routezy"
 npm run dev
 ```
 
@@ -216,14 +216,14 @@ npm run dev
 Backend:
 
 ```powershell
-cd "C:\PERSONAL PROJECTS\TripZo\server"
+cd "C:\PERSONAL PROJECTS\Routezy\server"
 npm run dev
 ```
 
 Mobile:
 
 ```powershell
-cd "C:\PERSONAL PROJECTS\TripZo\mobile"
+cd "C:\PERSONAL PROJECTS\Routezy\mobile"
 npx expo start -c
 ```
 
@@ -233,6 +233,7 @@ Base server URL: `http://localhost:5000` (default)
 
 Health:
 - `GET /health`
+- `GET /account-deletion` public Play Store account deletion page
 
 Auth routes (`/api/auth`):
 - `POST /signup`
@@ -295,7 +296,7 @@ Current backend includes:
 
 ## Design System
 
-TripZo uses the "Coastal Light" design direction:
+Routezy uses the "Coastal Light" design direction:
 - bright, clean white surfaces
 - coral-to-amber branded accents
 - deep navy primary text
@@ -306,7 +307,7 @@ Refer to project design documentation for full palette, typography, spacing, and
 
 ## Roadmap and Implementation Notes
 
-TripZo includes two mapping directions:
+Routezy includes two mapping directions:
 
 1. Google Maps Platform integration (reference architecture)
 2. Open-source/no-key replacement pipeline (Expo Location + Photon + OSRM + Overpass)
@@ -328,6 +329,40 @@ Suggested phased roadmap:
 - Restart Expo and backend after env updates.
 - If Google auth fails, verify OAuth client IDs and Firebase provider setup.
 - If itinerary APIs fail, validate `GOOGLE_MAPS_API_KEY` and server-side quota settings.
+
+## Google Play Account Deletion
+
+Google Play requires apps that support account creation to provide:
+- an in-app account deletion option
+- a public web URL where users can request deletion without reinstalling the app
+
+Routezy now exposes a public deletion page at:
+
+```text
+https://your-domain.com/account-deletion
+```
+
+Recommended server env values:
+
+```env
+PUBLIC_APP_NAME=Routezy
+PUBLIC_SUPPORT_EMAIL=support@yourdomain.com
+ACCOUNT_DELETION_RETENTION_NOTE=Some records may be retained when required for legal, fraud-prevention, or security reasons.
+```
+
+What Routezy currently deletes when the user deletes their account:
+- user profile
+- profile image
+- user-created trips
+- saved-trip records
+- session history
+- user activity records
+- related security event records
+
+Play Console setup:
+1. Deploy the backend on a public HTTPS domain.
+2. Open `https://your-domain.com/account-deletion` and confirm it loads without authentication.
+3. In Play Console, paste that URL into the account deletion field.
 
 ## License
 

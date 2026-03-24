@@ -29,8 +29,8 @@ export default function ScreenTopBar({ activeRoute, styles, onCustomBack }) {
     <View style={[styles.topBarShell, { paddingTop: insets.top + 2 }]}>
       <View style={styles.topBarInner}>
         <View style={styles.topBarTitleWrap} pointerEvents="none">
-          <Text style={styles.topBarTitleTrip}>Trip</Text>
-          <Text style={styles.topBarTitleZo}>Zo</Text>
+          <Text style={styles.topBarTitleTrip}>Route</Text>
+          <Text style={styles.topBarTitleZo}>zy</Text>
         </View>
         <Pressable
           onPress={onBackPress}

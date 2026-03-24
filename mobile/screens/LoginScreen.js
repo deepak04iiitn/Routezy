@@ -158,7 +158,7 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
                       <Ionicons name="earth-outline" size={92} color="rgba(255,255,255,0.45)" />
                     </View>
                     <Text style={styles.heroTitle}>Welcome back!</Text>
-                    <Text style={styles.heroSubtitle}>Plan your next adventure with TripZo</Text>
+                    <Text style={styles.heroSubtitle}>Plan your next adventure with Routezy</Text>
                   </View>
                 </LinearGradient>
               </View>
@@ -317,14 +317,14 @@ export default function LoginScreen({ onLogin, onGoRegister }) {
                   By continuing, you agree to our{' '}
                   <Text
                     style={styles.legalLink}
-                    onPress={() => Linking.openURL('https://tripzo-privacy-policy-terms-conditi.vercel.app/terms-and-conditions')}
+                    onPress={() => Linking.openURL('https://routezy-web.vercel.app/terms-and-conditions')}
                   >
                     Terms & Conditions
                   </Text>
                   {' '}and acknowledge that you have read our{' '}
                   <Text
                     style={styles.legalLink}
-                    onPress={() => Linking.openURL('https://tripzo-privacy-policy-terms-conditi.vercel.app/')}
+                    onPress={() => Linking.openURL('https://routezy-web.vercel.app/')}
                   >
                     Privacy Policy
                   </Text>

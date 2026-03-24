@@ -21,8 +21,8 @@ import {
 } from './itineraryApiService';
 
 
-const TRIPS_STORAGE_KEY = 'tripzo.trips.v1';
-const SAVED_TRIP_IDS_STORAGE_KEY = 'tripzo.savedTrips.v1';
+const TRIPS_STORAGE_KEY = 'routezy.trips.v1';
+const SAVED_TRIP_IDS_STORAGE_KEY = 'routezy.savedTrips.v1';
 
 const BUDGET_RANGES = {
   $: { min: 0, max: 1, label: 'Low' },
@@ -482,7 +482,7 @@ async function resolveLocationInput(input, role) {
     };
   }
 
-  // Text query — geocode it
+  // Text query â€” geocode it
   if (input?.text?.trim()) {
     return geocodeWithPhoton(input.text.trim());
   }

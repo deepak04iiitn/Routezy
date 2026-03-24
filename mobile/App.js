@@ -117,8 +117,14 @@ export default function App() {
     await persistAuth(response);
   };
 
-  const handleRegister = async ({ email, password }) => {
-    const response = await signup({ email, password });
+  const handleRegister = async ({ fullName, email, password, securityQuestion, securityAnswer }) => {
+    const response = await signup({
+      fullName,
+      email,
+      password,
+      securityQuestion,
+      securityAnswer,
+    });
     await persistAuth(response);
   };
 

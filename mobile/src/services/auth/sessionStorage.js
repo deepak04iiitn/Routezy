@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SESSION_KEY = 'tripzo.session.v1';
-const ONBOARDING_KEY = 'tripzo.onboarding.done.v1';
+const SESSION_KEY = 'routezy.session.v1';
+const ONBOARDING_KEY = 'routezy.onboarding.done.v1';
 
 export async function saveSession(session) {
   await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));

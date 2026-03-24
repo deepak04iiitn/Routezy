@@ -2,9 +2,12 @@ import React from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-const Logo = require('../assets/TripZo_Logo.png');
 const SplashImage = require('../assets/Splash_image.png');
+const Logo = require('../assets/Logo.png');
 const { width, height } = Dimensions.get('window');
+
+const LOGO_SIZE = Math.min(width * 0.55, 220);
+const WAVE_HEIGHT = 60;
 
 export default function SplashScreen({ onDone }) {
   return (
@@ -20,16 +23,20 @@ export default function SplashScreen({ onDone }) {
       </View>
 
       <View style={styles.bottomSheet}>
+        {/* Wave rendered first, sits on top of logo via zIndex */}
         <View style={styles.waveContainer} pointerEvents="none">
-          <Svg width={width} height={60} viewBox={`0 0 ${width} 60`}>
+          <Svg width={width} height={WAVE_HEIGHT} viewBox={`0 0 ${width} ${WAVE_HEIGHT}`}>
             <Path
-              d={`M0 60 L0 34 C ${width * 0.18} 8, ${width * 0.34} 8, ${width * 0.5} 28 C ${width * 0.66} 48, ${width * 0.82} 48, ${width} 22 L${width} 60 Z`}
+              d={`M0 ${WAVE_HEIGHT} L0 34 C ${width * 0.18} 8, ${width * 0.34} 8, ${width * 0.5} 28 C ${width * 0.66} 48, ${width * 0.82} 48, ${width} 22 L${width} ${WAVE_HEIGHT} Z`}
               fill="#FFFFFF"
             />
           </Svg>
         </View>
 
+        {/* Logo sits below the wave */}
         <Image source={Logo} style={styles.logo} resizeMode="contain" />
+
+        <Text style={styles.logoLabel}>Routezy</Text>
         <Text style={styles.tagline}>
           Explore <Text style={styles.taglineAccent}>More</Text> in{' '}
           <Text style={styles.taglineAccent}>Less Time</Text>
@@ -70,9 +77,9 @@ const styles = StyleSheet.create({
     height: height * 0.44,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 28,
-    paddingTop: 36,
+    paddingTop: WAVE_HEIGHT - 90,          // content starts just below the wave
     paddingBottom: 28,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -4 },
@@ -83,22 +90,31 @@ const styles = StyleSheet.create({
   },
   waveContainer: {
     position: 'absolute',
-    top: -58,
+    top: -WAVE_HEIGHT + 2,               // wave peeks above the sheet edge
     left: 0,
     right: 0,
-    alignItems: 'center',
+    zIndex: 10,                          // wave renders ON TOP of logo
   },
   logo: {
-    width: width * 0.92,
-    height: width * 0.44,
-    marginTop: -80,
-    marginBottom: 12,
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    marginTop: -36,                      // pull logo higher under the wave
+    zIndex: 1,                           // below the wave
+  },
+  logoLabel: {
+    marginTop: -LOGO_SIZE * 0.18,        // pull label up close under logo
+    marginBottom: 10,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#0F2044',
+    letterSpacing: 0.5,
+    zIndex: 1,
   },
   tagline: {
     fontSize: 18,
     color: '#8E98A5',
     textAlign: 'center',
-    marginTop: -10,
+    marginTop: 2,
     marginBottom: 26,
     fontWeight: '400',
     fontStyle: 'italic',

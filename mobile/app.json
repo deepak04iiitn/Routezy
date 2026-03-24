@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TripZo",
-    "slug": "TripZo",
+    "name": "Routezy",
+    "slug": "Routezy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.deepakyadav2010.tripzo",
+      "package": "com.deepakyadav2010.routezy",
       "statusBar": {
         "barStyle": "dark-content",
         "backgroundColor": "#ffffff"

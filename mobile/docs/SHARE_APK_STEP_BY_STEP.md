@@ -1,4 +1,4 @@
-# TripZo - Share APK for Friend Testing (Step by Step)
+# Routezy - Share APK for Friend Testing (Step by Step)
 
 This guide shows the easiest and most reliable way to generate an APK and share it with a friend for testing.
 
@@ -8,7 +8,7 @@ This guide shows the easiest and most reliable way to generate an APK and share 
 
 Open PowerShell in:
 
-`C:\PERSONAL PROJECTS\TripZo\mobile`
+`C:\PERSONAL PROJECTS\Routezy\mobile`
 
 ### 1.1 Install dependencies
 
@@ -125,7 +125,7 @@ Send this to your friend:
 2. On Android, allow app installs from unknown sources for the app used to open the APK (Chrome/Files/Drive).
 3. Tap APK and install.
 4. If Play Protect warning appears, choose install anyway (only if they trust you).
-5. Open TripZo and test.
+5. Open Routezy and test.
 
 ---
 

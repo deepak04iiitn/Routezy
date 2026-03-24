@@ -1,4 +1,4 @@
-# Firebase + Google Auth Environment Setup (TripZo)
+# Firebase + Google Auth Environment Setup (Routezy)
 
 This guide shows how to get all required environment variables for:
 
@@ -47,7 +47,7 @@ You need Firebase web app config values for the Expo Firebase SDK setup.
 
 1. In Firebase Console, click the **gear icon** -> **Project settings**.
 2. In **Your apps**, click **Add app** and choose **Web** (`</>` icon).
-3. Register the app (nickname can be anything, e.g. `TripZo Web Config`).
+3. Register the app (nickname can be anything, e.g. `Routezy Web Config`).
 4. After registration, Firebase displays `firebaseConfig`.
 
 It looks like:
@@ -96,7 +96,7 @@ You only need to set this once before creating OAuth client IDs.
 1. In Google Cloud Console, go to **APIs & Services** -> **Credentials**.
 2. Click **Create Credentials** -> **OAuth client ID**.
 3. Choose **Web application**.
-4. Give it a name, e.g. `TripZo Web`.
+4. Give it a name, e.g. `Routezy Web`.
 5. (Optional) Add authorized redirect URIs if needed by your flow.
 6. Click **Create**.
 7. Copy the generated **Client ID**.
@@ -114,7 +114,7 @@ Use another OAuth client ID for Expo auth-session usage.
 Recommended approach:
 
 1. Create another **OAuth client ID** of type **Web application**.
-2. Name it `TripZo Expo`.
+2. Name it `Routezy Expo`.
 3. Copy client ID.
 
 Set:
@@ -209,7 +209,7 @@ Important:
 
 ---
 
-## 10) Where to store env variables in TripZo
+## 10) Where to store env variables in Routezy
 
 ### Mobile
 

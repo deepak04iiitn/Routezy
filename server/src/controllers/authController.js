@@ -1,5 +1,9 @@
 import User from '../models/User.js';
 import UserSession from '../models/UserSession.js';
+import UserActivity from '../models/UserActivity.js';
+import SavedTrip from '../models/SavedTrip.js';
+import Trip from '../models/Trip.js';
+import SecurityEvent from '../models/SecurityEvent.js';
 import { signAuthToken } from '../utils/jwt.js';
 import { getFirebaseAdminAuth } from '../config/firebaseAdmin.js';
 import {
@@ -95,12 +99,18 @@ export async function signup(req, res, next) {
     }
 
     const generatedUsername = generateUsernameFromEmail(value.email);
-    const user = await User.create({
-      ...value,
+    const user = new User({
+      fullName: value.fullName,
+      email: value.email,
+      password: value.password,
+      securityQuestion: value.securityQuestion,
       username: generatedUsername,
       authProvider: 'local',
       role: resolveRoleForEmail(value.email),
     });
+
+    await user.setSecurityAnswer(value.securityAnswer);
+    await user.save();
     await touchUserActivity(user._id);
     const token = signAuthToken(user._id.toString());
 
@@ -398,6 +408,27 @@ export async function deleteAccount(req, res, next) {
       await deleteFileIfExists(absolutePath);
     }
 
+    const ownedTrips = await Trip.find({ userId: user._id }).select('_id');
+    const ownedTripIds = ownedTrips.map((trip) => trip._id);
+
+    await Promise.all([
+      ownedTripIds.length ? SavedTrip.deleteMany({ tripId: { $in: ownedTripIds } }) : Promise.resolve(),
+      SavedTrip.deleteMany({ userId: user._id }),
+      ownedTripIds.length ? Trip.deleteMany({ _id: { $in: ownedTripIds } }) : Promise.resolve(),
+      UserSession.deleteMany({ userId: user._id }),
+      UserActivity.deleteMany({ userId: user._id }),
+      SecurityEvent.deleteMany({ userId: String(user._id) }),
+    ]);
+
+    if (user.firebaseUid) {
+      try {
+        const firebaseAuth = getFirebaseAdminAuth();
+        await firebaseAuth.deleteUser(user.firebaseUid);
+      } catch (_error) {
+        // Keep account deletion resilient if the Firebase user is already gone.
+      }
+    }
+
     await User.deleteOne({ _id: user._id });
 
     return res.json({ message: 'Account deleted successfully.' });
@@ -449,4 +480,3 @@ export async function resetPasswordWithSecurityAnswer(req, res, next) {
     return next(error);
   }
 }
-

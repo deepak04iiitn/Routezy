@@ -23,7 +23,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScreenTopBar from '../../navigation/components/ScreenTopBar';
 import TripPlannerScreen from './TripPlannerScreen';
-import { getMe, updateProfile } from '../../services/auth/authService';
 import { requestLiveLocation } from '../../services/maps/locationService';
 import {
   searchPhotonPlaces,
@@ -352,12 +351,6 @@ export default function HomeScreen({ styles }) {
   const [showBudgetPicker, setShowBudgetPicker] = useState(false);
   const [budget, setBudget] = useState('$');
   const [plannerView, setPlannerView] = useState('form');
-  const [securityPromptVisible, setSecurityPromptVisible] = useState(false);
-  const [securityPromptStep, setSecurityPromptStep] = useState('intro');
-  const [securityPromptQuestion, setSecurityPromptQuestion] = useState('');
-  const [securityPromptAnswer, setSecurityPromptAnswer] = useState('');
-  const [securityPromptError, setSecurityPromptError] = useState('');
-  const [isSecurityPromptSaving, setIsSecurityPromptSaving] = useState(false);
   const [recentTrips, setRecentTrips] = useState([]);
   const [userTripCount, setUserTripCount] = useState(0);
   const [isLoadingRecentTrips, setIsLoadingRecentTrips] = useState(false);
@@ -410,32 +403,6 @@ export default function HomeScreen({ styles }) {
       setIsFetchingLocation(false);
     }
   }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
-
-      const checkSecuritySetup = async () => {
-        try {
-          const response = await getMe();
-          if (!isMounted) {
-            return;
-          }
-          if (!response.user?.hasSecurityQuestion) {
-            setSecurityPromptVisible(true);
-            setSecurityPromptStep('intro');
-          }
-        } catch (_error) {
-          // Silent fail for non-blocking helper prompt.
-        }
-      };
-
-      checkSecuritySetup();
-      return () => {
-        isMounted = false;
-      };
-    }, [])
-  );
 
   useEffect(() => {
     if (SMART_TIPS.length <= 1) {
@@ -579,30 +546,6 @@ export default function HomeScreen({ styles }) {
     setFromSelectedPlace(suggestion);
   };
 
-  const saveSecurityPromptDetails = async () => {
-    if (!securityPromptQuestion.trim() || !securityPromptAnswer.trim()) {
-      setSecurityPromptError('Please enter both a security question and answer.');
-      return;
-    }
-
-    setSecurityPromptError('');
-    setIsSecurityPromptSaving(true);
-    try {
-      await updateProfile({
-        securityQuestion: securityPromptQuestion.trim(),
-        securityAnswer: securityPromptAnswer.trim(),
-      });
-      setSecurityPromptVisible(false);
-      setSecurityPromptQuestion('');
-      setSecurityPromptAnswer('');
-      setSecurityPromptStep('intro');
-    } catch (error) {
-      setSecurityPromptError(error.message || 'Unable to save security question right now.');
-    } finally {
-      setIsSecurityPromptSaving(false);
-    }
-  };
-
   const startPlannerFlow = () => {
     if (!startDate || !endDate) {
       Alert.alert('Trip dates required', 'Please select your start and end dates.');
@@ -654,82 +597,6 @@ export default function HomeScreen({ styles }) {
           </View>
         </Modal>
 
-        <Modal
-          visible={securityPromptVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setSecurityPromptVisible(false)}
-        >
-          <View style={styles.securityPromptOverlay}>
-            <View style={styles.securityPromptCard}>
-              <Text style={styles.securityPromptTitle}>Set up password recovery</Text>
-              {securityPromptStep === 'intro' ? (
-                <>
-                  <Text style={styles.securityPromptText}>
-                    Add a security question now so you can safely recover your account if you ever forget your password.
-                  </Text>
-                  <View style={styles.securityPromptActions}>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      style={styles.securityPromptSecondaryBtn}
-                      onPress={() => setSecurityPromptVisible(false)}
-                    >
-                      <Text style={styles.securityPromptSecondaryText}>Later</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      style={styles.securityPromptPrimaryBtn}
-                      onPress={() => setSecurityPromptStep('form')}
-                    >
-                      <Text style={styles.securityPromptPrimaryText}>Proceed</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <TextInput
-                    value={securityPromptQuestion}
-                    onChangeText={setSecurityPromptQuestion}
-                    placeholder="Security question (e.g. What was your first pet's name?)"
-                    placeholderTextColor="#94A3B8"
-                    style={styles.securityPromptInput}
-                  />
-                  <TextInput
-                    value={securityPromptAnswer}
-                    onChangeText={setSecurityPromptAnswer}
-                    placeholder="Security answer"
-                    placeholderTextColor="#94A3B8"
-                    secureTextEntry
-                    style={[styles.securityPromptInput, styles.securityPromptInputGap]}
-                  />
-                  {!!securityPromptError && <Text style={styles.securityPromptError}>{securityPromptError}</Text>}
-                  <View style={styles.securityPromptActions}>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      style={styles.securityPromptSecondaryBtn}
-                      onPress={() => setSecurityPromptStep('intro')}
-                      disabled={isSecurityPromptSaving}
-                    >
-                      <Text style={styles.securityPromptSecondaryText}>Back</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      style={styles.securityPromptPrimaryBtn}
-                      onPress={saveSecurityPromptDetails}
-                      disabled={isSecurityPromptSaving}
-                    >
-                      {isSecurityPromptSaving ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text style={styles.securityPromptPrimaryText}>Save</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </View>
-          </View>
-        </Modal>
         <DateRangePickerModal
           visible={showDateRangePicker}
           initialStartDate={startDate}
@@ -2349,7 +2216,3 @@ const localStyles = StyleSheet.create({
     transform: [{ scale: 1.2 }],
   },
 });
-
-
-
-

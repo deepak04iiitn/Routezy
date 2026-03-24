@@ -28,15 +28,27 @@ const LIGHT = {
   muted: '#64748B',
 };
 
+const STEP_TITLES = ['Step 1 — Name', 'Step 2 — Credentials', 'Step 3 — Recovery setup'];
+const STEP_SUBTITLES = [
+  'Let us know who you are.',
+  'Choose the email and password you will use to sign in.',
+  'Create a security question and answer to recover your account.',
+];
+const TOTAL_STEPS = 3;
+
 export default function RegisterScreen({ onRegister, onGoLogin }) {
   const palette = LIGHT;
   const { width } = useWindowDimensions();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAgreed, setIsAgreed] = useState(false);
+  const [step, setStep] = useState(0);
 
   const responsiveStyles = useMemo(() => {
     return {
@@ -45,27 +57,239 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
     };
   }, [width]);
 
-  const submit = async () => {
-    if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+  const handleBack = () => {
+    if (step === 0) {
       return;
     }
-
-    if (!isAgreed) {
-      setError('Please agree to the Terms & Conditions and Privacy Policy.');
-      return;
-    }
-
     setError('');
-    setIsLoading(true);
-    try {
-      await onRegister({ email, password });
-    } catch (submitError) {
-      setError(submitError.message);
-    } finally {
-      setIsLoading(false);
+    setStep((prev) => Math.max(0, prev - 1));
+  };
+
+  const handlePrimaryAction = async () => {
+    setError('');
+    if (step === 0) {
+      const trimmedName = fullName.trim();
+      if (!trimmedName) {
+        setError('Please enter your full name.');
+        return;
+      }
+      if (trimmedName.length < 2) {
+        setError('Full name must be at least 2 characters.');
+        return;
+      }
+      if (trimmedName.length > 80) {
+        setError('Full name must be 80 characters or fewer.');
+        return;
+      }
+      setStep(1);
+      return;
+    }
+
+    if (step === 1) {
+      const trimmedEmail = email.trim();
+      if (!trimmedEmail) {
+        setError('Please enter your email.');
+        return;
+      }
+      if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
+        setError('Please provide a valid email address.');
+        return;
+      }
+      if (!password) {
+        setError('Please create a password.');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters.');
+        return;
+      }
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      const trimmedQuestion = securityQuestion.trim();
+      const trimmedAnswer = securityAnswer.trim();
+      if (!trimmedQuestion) {
+        setError('Please enter a security question.');
+        return;
+      }
+      if (trimmedQuestion.length < 6) {
+        setError('Security question must be at least 6 characters.');
+        return;
+      }
+      if (!trimmedAnswer) {
+        setError('Please enter a security answer.');
+        return;
+      }
+      if (trimmedAnswer.length < 2) {
+        setError('Security answer must be at least 2 characters.');
+        return;
+      }
+      if (!isAgreed) {
+        setError('Please agree to the Terms & Conditions and Privacy Policy.');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        await onRegister({
+          fullName: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          securityQuestion: trimmedQuestion,
+          securityAnswer: trimmedAnswer,
+        });
+      } catch (submitError) {
+        setError(submitError.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
+
+  const renderStepFields = () => {
+    if (step === 0) {
+      return (
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.label, { color: palette.navy }]}>Full name</Text>
+          <View style={styles.inputWrap}>
+            <Ionicons name="person-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: palette.navy,
+                  borderColor: palette.inputBorder,
+                  backgroundColor: palette.inputBg,
+                },
+              ]}
+              placeholder="Enter your full name"
+              placeholderTextColor="#94A3B8"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+          </View>
+        </View>
+      );
+    }
+
+    if (step === 1) {
+      return (
+        <>
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: palette.navy }]}>Email</Text>
+            <View style={styles.inputWrap}>
+              <Ionicons name="mail-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: palette.navy,
+                    borderColor: palette.inputBorder,
+                    backgroundColor: palette.inputBg,
+                  },
+                ]}
+                placeholder="yourname@example.com"
+                placeholderTextColor="#94A3B8"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.label, { color: palette.navy }]}>Password</Text>
+            <View style={styles.inputWrap}>
+              <Ionicons name="lock-closed-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: palette.navy,
+                    borderColor: palette.inputBorder,
+                    backgroundColor: palette.inputBg,
+                  },
+                ]}
+                placeholder="Create a strong password"
+                placeholderTextColor="#94A3B8"
+                secureTextEntry={isPasswordHidden}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setIsPasswordHidden((prev) => !prev)}
+                style={styles.rightIconButton}
+                activeOpacity={0.75}
+              >
+                <Ionicons
+                  name={isPasswordHidden ? 'eye-outline' : 'eye-off-outline'}
+                  size={22}
+                  color="#94A3B8"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.label, { color: palette.navy }]}>Security question</Text>
+          <View style={styles.inputWrap}>
+            <Ionicons name="chatbubbles-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: palette.navy,
+                  borderColor: palette.inputBorder,
+                  backgroundColor: palette.inputBg,
+                },
+              ]}
+              placeholder="e.g. What was your first pet's name?"
+              placeholderTextColor="#94A3B8"
+              value={securityQuestion}
+              onChangeText={setSecurityQuestion}
+            />
+          </View>
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={[styles.label, { color: palette.navy }]}>Security answer</Text>
+          <View style={styles.inputWrap}>
+            <Ionicons name="key-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: palette.navy,
+                  borderColor: palette.inputBorder,
+                  backgroundColor: palette.inputBg,
+                },
+              ]}
+              placeholder="Keep it secret and memorable"
+              placeholderTextColor="#94A3B8"
+              value={securityAnswer}
+              onChangeText={setSecurityAnswer}
+              secureTextEntry
+            />
+          </View>
+        </View>
+      </>
+    );
+  };
+
+  const primaryButtonLabel = isLoading
+    ? 'Creating...'
+    : step === TOTAL_STEPS - 1
+    ? 'Sign up'
+    : 'Continue';
+  const isPrimaryDisabled = isLoading || (step === TOTAL_STEPS - 1 && !isAgreed);
 
   return (
     <SafeAreaView
@@ -108,68 +332,51 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
             </View>
 
             <View style={styles.formContainer}>
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.label, { color: palette.navy }]}>Email</Text>
-                <View style={styles.inputWrap}>
-                  <Ionicons name="mail-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        color: palette.navy,
-                        borderColor: palette.inputBorder,
-                        backgroundColor: palette.inputBg,
-                      },
-                    ]}
-                    placeholder="yourname@example.com"
-                    placeholderTextColor="#94A3B8"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                  />
-                </View>
-              </View>
+              <Text style={styles.stepIndicator}>{`Step ${step + 1} of ${TOTAL_STEPS}`}</Text>
+              <Text style={styles.stepTitle}>{STEP_TITLES[step]}</Text>
+              <Text style={styles.stepSubtitle}>{STEP_SUBTITLES[step]}</Text>
 
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.label, { color: palette.navy }]}>Password</Text>
-                <View style={styles.inputWrap}>
-                  <Ionicons name="lock-closed-outline" size={22} color="#94A3B8" style={styles.leftIcon} />
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        color: palette.navy,
-                        borderColor: palette.inputBorder,
-                        backgroundColor: palette.inputBg,
-                      },
-                    ]}
-                    placeholder="Create a strong password"
-                    placeholderTextColor="#94A3B8"
-                    secureTextEntry={isPasswordHidden}
-                    value={password}
-                    onChangeText={setPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setIsPasswordHidden((prev) => !prev)}
-                    style={styles.rightIconButton}
-                    activeOpacity={0.75}
-                  >
-                    <Ionicons
-                      name={isPasswordHidden ? 'eye-outline' : 'eye-off-outline'}
-                      size={22}
-                      color="#94A3B8"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              {renderStepFields()}
 
               {!!error && <Text style={styles.error}>{error}</Text>}
 
+              {step === TOTAL_STEPS - 1 && (
+                <View style={styles.legalDisclaimer}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.checkboxContainer}
+                    onPress={() => setIsAgreed((prev) => !prev)}
+                  >
+                    <Ionicons
+                      name={isAgreed ? 'checkbox' : 'square-outline'}
+                      size={20}
+                      color={isAgreed ? palette.primary : palette.muted}
+                    />
+                  </TouchableOpacity>
+                  <Text style={[styles.legalText, { color: palette.muted }]}>
+                    By continuing, you agree to our{' '}
+                    <Text
+                      style={styles.legalLink}
+                    onPress={() => Linking.openURL('https://routezy-web.vercel.app/terms-and-conditions')}
+                    >
+                      Terms & Conditions
+                    </Text>
+                    {' '}and acknowledge that you have read our{' '}
+                    <Text
+                      style={styles.legalLink}
+                    onPress={() => Linking.openURL('https://routezy-web.vercel.app/')}
+                    >
+                      Privacy Policy
+                    </Text>
+                    .
+                  </Text>
+                </View>
+              )}
+
               <TouchableOpacity
-                style={[styles.buttonWrap, (isLoading || !isAgreed) && styles.buttonDisabled]}
-                onPress={submit}
-                disabled={isLoading || !isAgreed}
+                style={[styles.buttonWrap, isPrimaryDisabled && styles.buttonDisabled]}
+                onPress={handlePrimaryAction}
+                disabled={isPrimaryDisabled}
                 activeOpacity={0.9}
               >
                 <LinearGradient
@@ -178,40 +385,15 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
                   end={{ x: 1, y: 0 }}
                   style={styles.button}
                 >
-                  <Text style={styles.buttonText}>{isLoading ? 'Creating...' : 'Sign Up'}</Text>
+                  <Text style={styles.buttonText}>{primaryButtonLabel}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              
-              <View style={styles.legalDisclaimer}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.checkboxContainer}
-                  onPress={() => setIsAgreed((prev) => !prev)}
-                >
-                  <Ionicons
-                    name={isAgreed ? 'checkbox' : 'square-outline'}
-                    size={20}
-                    color={isAgreed ? palette.primary : palette.muted}
-                  />
+
+              {step > 0 && (
+                <TouchableOpacity style={styles.secondaryAction} onPress={handleBack}>
+                  <Text style={styles.secondaryActionText}>Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.legalText, { color: palette.muted }]}>
-                  By continuing, you agree to our{' '}
-                  <Text
-                    style={styles.legalLink}
-                    onPress={() => Linking.openURL('https://tripzo-privacy-policy-terms-conditi.vercel.app/terms-and-conditions')}
-                  >
-                    Terms & Conditions
-                  </Text>
-                  {' '}and acknowledge that you have read our{' '}
-                  <Text
-                    style={styles.legalLink}
-                    onPress={() => Linking.openURL('https://tripzo-privacy-policy-terms-conditi.vercel.app/')}
-                  >
-                    Privacy Policy
-                  </Text>
-                  .
-                </Text>
-              </View>
+              )}
 
               <View style={styles.footer}>
                 <Text style={[styles.link, { color: palette.muted }]}>
@@ -224,7 +406,7 @@ export default function RegisterScreen({ onRegister, onGoLogin }) {
             </View>
 
             <View style={styles.brandFoot}>
-              <Text style={styles.footnote}>Explore More • Save Time • Spend Less</Text>
+              <Text style={styles.footnote}>Explore More â€¢ Save Time â€¢ Spend Less</Text>
             </View>
           </View>
         </ScrollView>
@@ -294,6 +476,25 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 12,
   },
+  stepIndicator: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    color: '#94A3B8',
+    marginBottom: 2,
+  },
+  stepTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F2044',
+  },
+  stepSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 2,
+    marginBottom: 10,
+  },
   fieldGroup: {
     marginBottom: 16,
   },
@@ -340,6 +541,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '800',
     fontSize: 16,
+  },
+  secondaryAction: {
+    marginTop: 10,
+    alignSelf: 'center',
+  },
+  secondaryActionText: {
+    color: '#FF6B6B',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   error: {
     color: '#DC2626',

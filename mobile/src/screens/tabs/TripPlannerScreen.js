@@ -436,9 +436,9 @@ export default function TripPlannerScreen({
                     <View style={styles.instructionsCard}>
                       <View style={styles.instructionsHead}>
                         <Ionicons name='bulb-outline' size={18} color='#ff6b6b' />
-                        <Text style={styles.instructionsTitle}>How Manual Planning with TripZo</Text>
+                        <Text style={styles.instructionsTitle}>How Manual Planning with Routezy</Text>
                       </View>
-                      <InstructionRow index={1} text='TripZo lines up the city highlights first, you just tap your vibe.' />
+                      <InstructionRow index={1} text='Routezy lines up the city highlights first, you just tap your vibe.' />
                       <InstructionRow index={2} text='We auto-shape the shortest practical route with minimal backtracking.' />
                       <InstructionRow index={3} text='Plus smart recommendations for restaurants, ATMs, and washrooms on route.' />
                     </View>
@@ -454,9 +454,9 @@ export default function TripPlannerScreen({
                   <View style={styles.instructionsCard}>
                     <View style={styles.instructionsHead}>
                       <Ionicons name='flash-outline' size={18} color='#ff6b6b' />
-                      <Text style={styles.instructionsTitle}>Why automatic planning with TripZo</Text>
+                      <Text style={styles.instructionsTitle}>Why automatic planning with Routezy</Text>
                     </View>
-                    <InstructionRow index={1} text='TripZo auto-selects the best attractions from the city list.' />
+                    <InstructionRow index={1} text='Routezy auto-selects the best attractions from the city list.' />
                     <InstructionRow index={2} text='We generate a shortest-route itinerary for smoother and faster travel.' />
                     <InstructionRow index={3} text='You also get recommendations for restaurants, ATMs, and washrooms.' />
                   </View>

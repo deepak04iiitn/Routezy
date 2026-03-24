@@ -14,7 +14,7 @@ async function startServer() {
     const creditMonitor = startMonthlyCreditMonitor();
 
     const server = app.listen(PORT, () => {
-      console.log(`TripZo server running on port ${PORT}`);
+      console.log(`Routezy server running on port ${PORT}`);
     });
 
     const shutdown = async (signal) => {

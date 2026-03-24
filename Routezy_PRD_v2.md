@@ -1,5 +1,5 @@
-# 🗺️ TripZo — Product Requirements Document
-**Version 1.0 · 2025 · Confidential**
+# ðŸ—ºï¸ Routezy â€” Product Requirements Document
+**Version 1.0 Â· 2025 Â· Confidential**
 
 > *Explore More. Waste Less Time. Travel Smart.*
 
@@ -14,7 +14,7 @@
 | 03 | [Product Vision and Goals](#03-product-vision-and-goals) |
 | 04 | [Target Users](#04-target-users) |
 | 05 | [Key Value Proposition](#05-key-value-proposition) |
-| 06 | [Core Features — MVP](#06-core-features--mvp) |
+| 06 | [Core Features â€” MVP](#06-core-features--mvp) |
 | | [6.1 Smart Itinerary Generator](#61-smart-itinerary-generator) |
 | | [6.2 Multi-Day Itinerary Generation](#62-multi-day-itinerary-generation) |
 | | [6.3 Route Optimization](#63-route-optimization) |
@@ -35,14 +35,14 @@
 
 ## 01 Product Overview
 
-TripZo is a **smart travel planning mobile application** that helps users plan and optimize their trips efficiently — whether exploring a city for a few hours, a full day, or multiple days. The app automatically generates **optimized travel itineraries** based on location, travel preferences, available time, and nearby attractions.
+Routezy is a **smart travel planning mobile application** that helps users plan and optimize their trips efficiently â€” whether exploring a city for a few hours, a full day, or multiple days. The app automatically generates **optimized travel itineraries** based on location, travel preferences, available time, and nearby attractions.
 
 ### Core Capabilities
 
 | Capability | Description |
 |---|---|
 | **Route Optimization** | Calculates the most efficient visiting order to minimize total travel time and distance between attractions. |
-| **Restaurant Finder** | Suggests budget-appropriate dining spots after every 2–3 sightseeing locations along your route. |
+| **Restaurant Finder** | Suggests budget-appropriate dining spots after every 2â€“3 sightseeing locations along your route. |
 | **Live Trip Progress** | Real-time tracking with mark-visited, skip-location, and auto route recalculation features. |
 | **Shareable Itineraries** | One-tap link sharing so travel companions can import and sync any trip plan instantly. |
 | **Community Tips** | Real traveler notes and upvoted insights surface authentic, up-to-date local knowledge. |
@@ -52,21 +52,21 @@ TripZo is a **smart travel planning mobile application** that helps users plan a
 
 ## 02 Problem Statement
 
-Travelers planning trips face consistent, unsolved frustrations. Current tools are either too generic, too manual, or ignore real-world constraints — leading to wasted time and missed experiences.
+Travelers planning trips face consistent, unsolved frustrations. Current tools are either too generic, too manual, or ignore real-world constraints â€” leading to wasted time and missed experiences.
 
 | Problem | Description |
 |---|---|
-| 🔴 **Unoptimized Routes** | Attractions visited in random order cause exhausting back-and-forth travel across the city. |
-| 🟠 **Generic Recommendations** | Travel blogs offer one-size-fits-all lists with no adaptation to real-time location or schedule. |
-| 🟣 **No Smart Scheduling** | Existing planners ignore visit durations, opening hours, and real distances between places. |
-| 🔵 **Missing Essentials** | Finding restaurants, ATMs, washrooms, and services mid-trip is disruptive and ruins the flow of travel. |
-| 🟢 **Missed Attractions** | Poor planning causes travelers to run out of time or skip key destinations entirely. |
+| ðŸ”´ **Unoptimized Routes** | Attractions visited in random order cause exhausting back-and-forth travel across the city. |
+| ðŸŸ  **Generic Recommendations** | Travel blogs offer one-size-fits-all lists with no adaptation to real-time location or schedule. |
+| ðŸŸ£ **No Smart Scheduling** | Existing planners ignore visit durations, opening hours, and real distances between places. |
+| ðŸ”µ **Missing Essentials** | Finding restaurants, ATMs, washrooms, and services mid-trip is disruptive and ruins the flow of travel. |
+| ðŸŸ¢ **Missed Attractions** | Poor planning causes travelers to run out of time or skip key destinations entirely. |
 
 ---
 
 ## 03 Product Vision and Goals
 
-> *"To become the world's smartest travel companion — turning any trip into a perfectly optimized adventure."*
+> *"To become the world's smartest travel companion â€” turning any trip into a perfectly optimized adventure."*
 
 ### Strategic Goals
 
@@ -82,12 +82,12 @@ Travelers planning trips face consistent, unsolved frustrations. Current tools a
 
 | User Segment | Profile | Primary Use Case | Trip Duration |
 |---|---|---|---|
-| **Tourists** | Visiting an unfamiliar city | Discover top landmarks efficiently | 1–3 days |
+| **Tourists** | Visiting an unfamiliar city | Discover top landmarks efficiently | 1â€“3 days |
 | **Backpackers** | Budget multi-city travelers | Pack maximum sights on a tight budget | Multi-day |
 | **Solo Travelers** | Independent, self-guided | Safe, structured solo exploration | Any |
-| **Business Travelers** | Limited free-time windows | Quick, efficient city highlights | 2–4 hours |
+| **Business Travelers** | Limited free-time windows | Quick, efficient city highlights | 2â€“4 hours |
 | **Local Explorers** | Residents rediscovering home | Find hidden gems and new local spots | Half-day |
-| **Weekend Warriors** | Short-getaway enthusiasts | Pack a full experience into two days | 1–2 days |
+| **Weekend Warriors** | Short-getaway enthusiasts | Pack a full experience into two days | 1â€“2 days |
 
 ---
 
@@ -95,18 +95,18 @@ Travelers planning trips face consistent, unsolved frustrations. Current tools a
 
 | Value | Description |
 |---|---|
-| ⏱️ **Save 40% Travel Time** | Automated TSP-based route optimization eliminates unnecessary back-and-forth transit between attractions. |
-| 📅 **Smart Multi-Day Planning** | Automatically distributes attractions across days keeping each day geographically compact and time-balanced. |
-| 🌍 **Discover More Places** | Surface hidden gems and community-vetted tips that go far beyond standard tourist guides and travel blogs. |
-| 🤝 **Community Intelligence** | Real traveler notes and upvoted tips provide authentic, seasonally-relevant, up-to-date local insights. |
-| 📲 **All-in-One Companion** | Maps, restaurants, ATMs, washrooms, and progress tracking — everything a traveler needs in a single seamless app. |
-| 🔗 **Instant Trip Sharing** | One-tap shareable links let travel companions sync plans or import complete itineraries instantly. |
+| â±ï¸ **Save 40% Travel Time** | Automated TSP-based route optimization eliminates unnecessary back-and-forth transit between attractions. |
+| ðŸ“… **Smart Multi-Day Planning** | Automatically distributes attractions across days keeping each day geographically compact and time-balanced. |
+| ðŸŒ **Discover More Places** | Surface hidden gems and community-vetted tips that go far beyond standard tourist guides and travel blogs. |
+| ðŸ¤ **Community Intelligence** | Real traveler notes and upvoted tips provide authentic, seasonally-relevant, up-to-date local insights. |
+| ðŸ“² **All-in-One Companion** | Maps, restaurants, ATMs, washrooms, and progress tracking â€” everything a traveler needs in a single seamless app. |
+| ðŸ”— **Instant Trip Sharing** | One-tap shareable links let travel companions sync plans or import complete itineraries instantly. |
 
 ---
 
-## 06 Core Features — MVP
+## 06 Core Features â€” MVP
 
-These ten features form TripZo's Minimum Viable Product, selected to deliver maximum user value from day one with clear expansion paths in future releases.
+These ten features form Routezy's Minimum Viable Product, selected to deliver maximum user value from day one with clear expansion paths in future releases.
 
 ---
 
@@ -117,20 +117,20 @@ The core engine. Builds a complete, ready-to-use travel plan by analyzing locati
 | Input | Description |
 |---|---|
 | **User Location** | GPS-detected or manually entered starting point |
-| **Available Time** | 4 Hours · 1 Day · 2 Days · 3 Days · Custom |
+| **Available Time** | 4 Hours Â· 1 Day Â· 2 Days Â· 3 Days Â· Custom |
 | **Nearby Attractions** | Fetched via Google Places API by type and proximity |
 | **Opening Hours** | Closed attractions are automatically excluded from results |
 | **Visit Duration** | Pre-estimated by type: 45 min museum, 20 min monument, etc. |
 
-**Trip duration options:** `4 Hours` · `1 Day` · `2 Days` · `3 Days` · `Custom`
+**Trip duration options:** `4 Hours` Â· `1 Day` Â· `2 Days` Â· `3 Days` Â· `Custom`
 
 ---
 
 ### 6.2 Multi-Day Itinerary Generation
 
-Clusters geographically nearby attractions into the same day, ensuring balanced schedules and minimal daily travel distances across a 2–3 day trip.
+Clusters geographically nearby attractions into the same day, ensuring balanced schedules and minimal daily travel distances across a 2â€“3 day trip.
 
-**Example — Delhi 2-Day Trip:**
+**Example â€” Delhi 2-Day Trip:**
 
 | Day | Attraction | Visit Time |
 |---|---|---|
@@ -147,10 +147,10 @@ Clusters geographically nearby attractions into the same day, ensuring balanced 
 
 Calculates the optimal visiting order for all selected attractions, cutting unnecessary transit. The comparison below shows a real-world impact for a Delhi trip.
 
-| Without TripZo (Random Order) | With TripZo (Optimized Order) |
+| Without Routezy (Random Order) | With Routezy (Optimized Order) |
 |---|---|
-| Red Fort → India Gate → Jama Masjid → Chandni Chowk | Red Fort → Jama Masjid → Chandni Chowk → India Gate |
-| ❌ ~28 km total distance | ✅ ~14 km total distance **(50% reduction)** |
+| Red Fort â†’ India Gate â†’ Jama Masjid â†’ Chandni Chowk | Red Fort â†’ Jama Masjid â†’ Chandni Chowk â†’ India Gate |
+| âŒ ~28 km total distance | âœ… ~14 km total distance **(50% reduction)** |
 
 ---
 
@@ -165,26 +165,26 @@ Calculates the optimal visiting order for all selected attractions, cutting unne
 
 | Marker | Type | Color |
 |---|---|---|
-| 📍 | Attraction | Coral `#FF6B6B` |
-| 🍴 | Restaurant | Amber `#FFC947` |
-| 🏧 | ATM | Sky Blue `#0EA5E9` |
-| 🚻 | Washroom | Teal `#14B8A6` |
-| 🔵 | Current Location | Navy `#0F2044` |
+| ðŸ“ | Attraction | Coral `#FF6B6B` |
+| ðŸ´ | Restaurant | Amber `#FFC947` |
+| ðŸ§ | ATM | Sky Blue `#0EA5E9` |
+| ðŸš» | Washroom | Teal `#14B8A6` |
+| ðŸ”µ | Current Location | Navy `#0F2044` |
 
 ---
 
 ### 6.5 Restaurant Recommendations
 
-- Auto-inserted after every 2–3 sightseeing stops at a logical meal time
-- Three budget tiers: **Low** (under ₹300), **Medium** (₹300–800), **Premium** (₹800+)
+- Auto-inserted after every 2â€“3 sightseeing stops at a logical meal time
+- Three budget tiers: **Low** (under â‚¹300), **Medium** (â‚¹300â€“800), **Premium** (â‚¹800+)
 - Sourced from Google Places API filtered by proximity and rating
 - Example suggestions in Delhi: Karim's, Al Jawahar, Haveli Dharampura
 
 | Budget Tier | Price Range | Example (Delhi) |
 |---|---|---|
-| 🟢 Low Budget | Under ₹300/person | Karim's, Al Jawahar |
-| 🟡 Medium Budget | ₹300–₹800/person | Haveli Dharampura |
-| 🔴 Premium | ₹800+/person | The Spice Route, Lodi |
+| ðŸŸ¢ Low Budget | Under â‚¹300/person | Karim's, Al Jawahar |
+| ðŸŸ¡ Medium Budget | â‚¹300â€“â‚¹800/person | Haveli Dharampura |
+| ðŸ”´ Premium | â‚¹800+/person | The Spice Route, Lodi |
 
 ---
 
@@ -223,8 +223,8 @@ Calculates the optimal visiting order for all selected attractions, cutting unne
 
 ### 6.10 Shareable Itineraries
 
-- Unique shareable URL generated per itinerary: `tripzo.app/i/delhi-2-day-trip`
-- Publicly viewable without requiring a TripZo account
+- Unique shareable URL generated per itinerary: `routezy.app/i/delhi-2-day-trip`
+- Publicly viewable without requiring a Routezy account
 - One-tap import for logged-in users to add the full plan to their trips
 - Shared plan includes all stops, timings, route sequence, and meal slots
 
@@ -232,21 +232,21 @@ Calculates the optimal visiting order for all selected attractions, cutting unne
 
 ## 07 Algorithms and Technical Logic
 
-TripZo's intelligence runs on two algorithms: **TSP-based route optimization** for finding the shortest efficient path through attractions, and a **Greedy Time Allocation** system for distributing stops across multiple days. Both run server-side in real time.
+Routezy's intelligence runs on two algorithms: **TSP-based route optimization** for finding the shortest efficient path through attractions, and a **Greedy Time Allocation** system for distributing stops across multiple days. Both run server-side in real time.
 
 ---
 
-### 7.1 Route Optimization — TSP Approach
+### 7.1 Route Optimization â€” TSP Approach
 
-The core routing challenge is a variant of the **Traveling Salesman Problem**: find the shortest route that visits N attractions exactly once. Because exact TSP is O(n!), TripZo chains three heuristic methods for a near-optimal result in real time.
+The core routing challenge is a variant of the **Traveling Salesman Problem**: find the shortest route that visits N attractions exactly once. Because exact TSP is O(n!), Routezy chains three heuristic methods for a near-optimal result in real time.
 
-| Algorithm | Approach | Complexity | Role in TripZo |
+| Algorithm | Approach | Complexity | Role in Routezy |
 |---|---|---|---|
-| **Nearest Neighbor** | Start at user location, always visit the closest unvisited attraction next | O(n²) | Primary route generator — fast enough for real-time use |
-| **Distance Matrix API** | Replace straight-line estimates with real road travel times including live traffic | API call | Accuracy layer — corrects for one-way streets and terrain |
-| **2-Opt Optimization** | Post-generation pass: swap pairs of route edges that reduce total distance | O(n²) per pass | Route polish — typically cuts 10–20% additional distance |
+| **Nearest Neighbor** | Start at user location, always visit the closest unvisited attraction next | O(nÂ²) | Primary route generator â€” fast enough for real-time use |
+| **Distance Matrix API** | Replace straight-line estimates with real road travel times including live traffic | API call | Accuracy layer â€” corrects for one-way streets and terrain |
+| **2-Opt Optimization** | Post-generation pass: swap pairs of route edges that reduce total distance | O(nÂ²) per pass | Route polish â€” typically cuts 10â€“20% additional distance |
 
-#### Nearest Neighbor — Step by Step
+#### Nearest Neighbor â€” Step by Step
 
 | Step | Action |
 |---|---|
@@ -259,7 +259,7 @@ The core routing challenge is a variant of the **Traveling Salesman Problem**: f
 
 ---
 
-### 7.2 Multi-Day Scheduling — Greedy Time Allocation
+### 7.2 Multi-Day Scheduling â€” Greedy Time Allocation
 
 For multi-day trips, attractions are clustered by geographic proximity then greedily packed into each day's schedule up to a configured daily time limit before starting the next day.
 
@@ -269,14 +269,14 @@ For multi-day trips, attractions are clustered by geographic proximity then gree
 | **Step 2: Cluster** | Group attractions by geographic proximity so nearby places share a day |
 | **Step 3: Fill Day** | Greedily add to Day 1 until daily time budget is fully used |
 | **Step 4: Overflow** | Remaining attractions roll to Day 2, and so on until all are scheduled |
-| **Step 5: Insert Meals** | After every 2–3 stops, insert a restaurant recommendation slot |
+| **Step 5: Insert Meals** | After every 2â€“3 stops, insert a restaurant recommendation slot |
 | **Step 6: Validate** | Confirm each day meets minimum stops and does not exceed time limit |
 
 ---
 
 ## 08 Technical Architecture
 
-TripZo is built on a modern, scalable stack optimized for mobile performance, real-time map interactions, and rapid feature iteration. The architecture cleanly separates the frontend, backend API, database, and third-party integrations.
+Routezy is built on a modern, scalable stack optimized for mobile performance, real-time map interactions, and rapid feature iteration. The architecture cleanly separates the frontend, backend API, database, and third-party integrations.
 
 ### Stack Overview
 
@@ -305,7 +305,7 @@ TripZo is built on a modern, scalable stack optimized for mobile performance, re
 
 > **AI + Engineering Instruction:** Keep the Google Maps integration details above for reference, but for actual implementation use the replacement stack below completely as the default runtime path.
 
-TripZo will support a full no-key/open-source mapping and place-intelligence pipeline for app implementation.
+Routezy will support a full no-key/open-source mapping and place-intelligence pipeline for app implementation.
 
 #### 1) Live User Location (Replacement)
 
@@ -498,7 +498,7 @@ const getRestaurants = async (lat, lon) => {
 };
 ```
 
-#### Complete Free Stack for TripZo
+#### Complete Free Stack for Routezy
 
 | Feature | Tool |
 | --- | --- |
@@ -512,26 +512,26 @@ const getRestaurants = async (lat, lon) => {
 #### Reference Architecture Flow
 
 User opens map
-      ↓
+      â†“
 expo-location -> get user GPS
-      ↓
+      â†“
 react-native-maps -> show map
-      ↓
+      â†“
 Photon API -> search places
-      ↓
+      â†“
 Overpass API -> nearby restaurants/ATMs/washrooms
-      ↓
+      â†“
 OSRM -> generate route
-      ↓
+      â†“
 Polyline -> draw route
 
 ---
 
 ## 09 UI / UX Design Theme
 
-TripZo's visual identity is built around **"Coastal Light"** — a modern premium light theme that feels warm, energetic, and trustworthy. Inspired by the spontaneity of travel and the clarity of a sunny day, it pairs a crisp white canvas with a coral-to-amber gradient signature, deep navy typography, and sky-blue functional accents.
+Routezy's visual identity is built around **"Coastal Light"** â€” a modern premium light theme that feels warm, energetic, and trustworthy. Inspired by the spontaneity of travel and the clarity of a sunny day, it pairs a crisp white canvas with a coral-to-amber gradient signature, deep navy typography, and sky-blue functional accents.
 
-> *Coastal Light — Crisp white canvas · Coral-to-amber warmth · Deep navy ink · Sky-blue accents*
+> *Coastal Light â€” Crisp white canvas Â· Coral-to-amber warmth Â· Deep navy ink Â· Sky-blue accents*
 
 ---
 
@@ -539,22 +539,22 @@ TripZo's visual identity is built around **"Coastal Light"** — a modern premiu
 
 | Swatch | Name | Hex Code | Usage |
 |---|---|---|---|
-| 🟥 | **Coral** | `#FF6B6B` | Primary brand. CTAs, active states, key highlights. |
-| 🟧 | **Tangerine** | `#FF8E53` | Mid gradient. Secondary buttons, progress fills. |
-| 🟨 | **Amber** | `#FFC947` | Warm accent. Badges, warnings, starred items. |
-| 🟦 | **Navy** | `#0F2044` | Primary text, headers, nav bars. |
-| 🔷 | **Navy Mid** | `#1E3A6E` | Section headings, card titles. |
-| 🔵 | **Sky Blue** | `#0EA5E9` | Links, info states, map route line, chips. |
-| 🟩 | **Emerald** | `#10B981` | Success, completed items, positive metrics. |
-| 🟪 | **Violet** | `#8B5CF6` | Premium features, sharing, community badges. |
-| ⬜ | **Snow** | `#F8F9FC` | Page background, all card backgrounds. |
-| 🔲 | **Mist** | `#E2E8F2` | Borders, dividers, table stripes. |
+| ðŸŸ¥ | **Coral** | `#FF6B6B` | Primary brand. CTAs, active states, key highlights. |
+| ðŸŸ§ | **Tangerine** | `#FF8E53` | Mid gradient. Secondary buttons, progress fills. |
+| ðŸŸ¨ | **Amber** | `#FFC947` | Warm accent. Badges, warnings, starred items. |
+| ðŸŸ¦ | **Navy** | `#0F2044` | Primary text, headers, nav bars. |
+| ðŸ”· | **Navy Mid** | `#1E3A6E` | Section headings, card titles. |
+| ðŸ”µ | **Sky Blue** | `#0EA5E9` | Links, info states, map route line, chips. |
+| ðŸŸ© | **Emerald** | `#10B981` | Success, completed items, positive metrics. |
+| ðŸŸª | **Violet** | `#8B5CF6` | Premium features, sharing, community badges. |
+| â¬œ | **Snow** | `#F8F9FC` | Page background, all card backgrounds. |
+| ðŸ”² | **Mist** | `#E2E8F2` | Borders, dividers, table stripes. |
 
 #### Gradient Signature
 ```
 linear-gradient(135deg, #FF6B6B 0%, #FF8E53 50%, #FFC947 100%)
 ```
-Applied to: Hero headers · Primary CTAs · Progress bars · Cover backgrounds · Tab active indicators
+Applied to: Hero headers Â· Primary CTAs Â· Progress bars Â· Cover backgrounds Â· Tab active indicators
 
 ---
 
@@ -562,12 +562,12 @@ Applied to: Hero headers · Primary CTAs · Progress bars · Cover backgrounds �
 
 | Role | Font | Size | Weight | Color | Usage |
 |---|---|---|---|---|---|
-| **Display / Hero** | Poppins | 32–48px | Bold | Navy `#0F2044` | Screen titles, hero text, cover |
-| **Section Headings** | Poppins | 22–28px | SemiBold | Navy Mid | Major screen section titles |
-| **Card Titles** | Poppins | 16–18px | Medium | Navy | Attraction names, feature headers |
-| **Body Text** | DM Sans | 14–15px | Regular | Ink Mid `#374151` | All readable content, line-height 1.6 |
-| **Captions / Labels** | DM Sans | 12–13px | Regular | Ink Soft `#6B7280` | Timestamps, distances, metadata |
-| **Micro / Tags** | DM Sans | 11px | SemiBold | — | Uppercase, +0.5px letter-spacing, budget tags |
+| **Display / Hero** | Poppins | 32â€“48px | Bold | Navy `#0F2044` | Screen titles, hero text, cover |
+| **Section Headings** | Poppins | 22â€“28px | SemiBold | Navy Mid | Major screen section titles |
+| **Card Titles** | Poppins | 16â€“18px | Medium | Navy | Attraction names, feature headers |
+| **Body Text** | DM Sans | 14â€“15px | Regular | Ink Mid `#374151` | All readable content, line-height 1.6 |
+| **Captions / Labels** | DM Sans | 12â€“13px | Regular | Ink Soft `#6B7280` | Timestamps, distances, metadata |
+| **Micro / Tags** | DM Sans | 11px | SemiBold | â€” | Uppercase, +0.5px letter-spacing, budget tags |
 
 ---
 
@@ -583,7 +583,7 @@ Applied to: Hero headers · Primary CTAs · Progress bars · Cover backgrounds �
 | **Bottom sheet radius** | `24px` (top only) | Slide-up sheets and modals |
 | **Card shadow** | `0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)` | Subtle lift, no heavy drop shadows |
 | **Modal shadow** | `0 20px 60px rgba(15,32,68,0.18)` | Navy-tinted for depth without darkness |
-| **Iconography** | Phosphor Icons | Filled for active, Regular for inactive — 24px minimum touch target |
+| **Iconography** | Phosphor Icons | Filled for active, Regular for inactive â€” 24px minimum touch target |
 
 ---
 
@@ -628,39 +628,39 @@ Applied to: Hero headers · Primary CTAs · Progress bars · Cover backgrounds �
 
 ## 11 Monetization Strategy
 
-TripZo follows a **freemium model**: the free tier delivers the full core experience to maximize adoption, while four revenue streams scale sustainably with the user base without compromising the free user experience.
+Routezy follows a **freemium model**: the free tier delivers the full core experience to maximize adoption, while four revenue streams scale sustainably with the user base without compromising the free user experience.
 
 ---
 
-### 💎 TripZo Pro — Subscription
+### ðŸ’Ž Routezy Pro â€” Subscription
 
 - Unlimited multi-day itinerary generation *(free tier: single-day only)*
 - Offline maps and downloadable itineraries for areas with no signal
 - Advanced customization: pace settings, attraction type filters, custom start times
 - Priority support and early access to new features before public release
-- **Pricing:** ₹199/month  ·  ₹1,499/year *(2 months free)*
+- **Pricing:** â‚¹199/month  Â·  â‚¹1,499/year *(2 months free)*
 
 ---
 
-### 🤝 Restaurant and Venue Partnerships
+### ðŸ¤ Restaurant and Venue Partnerships
 
 - Featured placement in restaurant recommendations *(clearly labeled as Sponsored)*
-- Exclusive TripZo-user discounts and offers from partner restaurants
+- Exclusive Routezy-user discounts and offers from partner restaurants
 - Commission earned on reservations completed directly through the app
 - Tourism board partnerships for promoted attractions in new cities
 
 ---
 
-### 🏨 Travel Bookings and Affiliate Revenue
+### ðŸ¨ Travel Bookings and Affiliate Revenue
 
 - In-app hotel booking integration via Booking.com and Airbnb affiliate APIs
 - Tour and activity bookings through GetYourGuide and Viator integration
-- Commission per completed booking, typically **5–12% of booking value**
+- Commission per completed booking, typically **5â€“12% of booking value**
 - Transport options: ride-booking integration via Ola and Uber APIs
 
 ---
 
-### 📢 Sponsored Attractions and Advertising
+### ðŸ“¢ Sponsored Attractions and Advertising
 
 - Promoted placement in itinerary generation results *(clearly labeled as promoted)*
 - Sponsored pins on the map view for museums, parks, and new experiences
@@ -673,15 +673,15 @@ TripZo follows a **freemium model**: the free tier delivers the full core experi
 
 | Property | Detail |
 |---|---|
-| **Product** | TripZo |
-| **Version** | 1.0 — MVP |
-| **Prepared by** | TripZo Product Team |
+| **Product** | Routezy |
+| **Version** | 1.0 â€” MVP |
+| **Prepared by** | Routezy Product Team |
 | **Year** | 2025 |
 | **Status** | Confidential |
 | **Design Theme** | Coastal Light |
-| **Stack** | React Native Expo · Node.js · MongoDB · Google Maps · Firebase |
-| **Website** | tripzo.app |
+| **Stack** | React Native Expo Â· Node.js Â· MongoDB Â· Google Maps Â· Firebase |
+| **Website** | routezy.app |
 
 ---
 
-*© 2025 TripZo · All rights reserved · Confidential*
+*Â© 2025 Routezy Â· All rights reserved Â· Confidential*

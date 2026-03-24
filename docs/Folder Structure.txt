@@ -1,178 +1,178 @@
-tripzo/
-│
-├── mobile/                 # Expo React Native App
-├── server/                 # Node.js + Express Backend
-├── docs/                   # PRD, architecture docs
-├── scripts/                # deployment scripts
-│
-├── .env
-├── README.md
-└── package.json
+routezy/
+â”‚
+â”œâ”€â”€ mobile/                 # Expo React Native App
+â”œâ”€â”€ server/                 # Node.js + Express Backend
+â”œâ”€â”€ docs/                   # PRD, architecture docs
+â”œâ”€â”€ scripts/                # deployment scripts
+â”‚
+â”œâ”€â”€ .env
+â”œâ”€â”€ README.md
+â””â”€â”€ package.json
 
 
 
 mobile/
-│
-├── app/                    # Expo Router screens
-│
-│   ├── (tabs)/
-│   │   ├── index.jsx       # Home
-│   │   ├── trips.jsx
-│   │   ├── create-trip.jsx
-│   │   └── profile.jsx
-│
-│   ├── itinerary/
-│   │   └── [tripId].jsx
-│
-│   ├── map/
-│   │   └── map-view.jsx
-│
-│   ├── auth/
-│   │   ├── login.jsx
-│   │   └── signup.jsx
-│
-│   └── _layout.jsx         # navigation layout
-│
-│
-├── src/
-│
-│   ├── assets/
-│   │   ├── images/
-│   │   ├── icons/
-│   │   └── illustrations/
-│
-│   ├── components/
-│   │
-│   │   ├── common/
-│   │   │   ├── Button.jsx
-│   │   │   ├── Card.jsx
-│   │   │   ├── Loader.jsx
-│   │   │   └── Modal.jsx
-│   │
-│   │   ├── map/
-│   │   │   ├── MapView.jsx
-│   │   │   ├── RoutePolyline.jsx
-│   │   │   ├── PlaceMarker.jsx
-│   │   │   └── UserLocationMarker.jsx
-│   │
-│   │   ├── itinerary/
-│   │   │   ├── PlaceCard.jsx
-│   │   │   ├── RestaurantSuggestion.jsx
-│   │   │   ├── ATMSuggestion.jsx
-│   │   │   └── TripProgressBar.jsx
-│   │
-│   │   └── reviews/
-│   │       ├── ReviewCard.jsx
-│   │       └── TipCard.jsx
-│
-│
-│   ├── services/
-│   │
-│   │   ├── api/
-│   │   │   └── apiClient.js
-│   │
-│   │   ├── maps/
-│   │   │   └── googleMapsService.js
-│   │
-│   │   ├── itinerary/
-│   │   │   └── itineraryService.js
-│   │
-│   │   └── auth/
-│   │       └── firebaseAuthService.js
-│
-│
-│   ├── store/
-│   │   ├── tripStore.js
-│   │   └── userStore.js
-│
-│
-│   ├── hooks/
-│   │   ├── useLocation.js
-│   │   └── useTripProgress.js
-│
-│
-│   ├── utils/
-│   │   ├── distance.js
-│   │   ├── timeFormatter.js
-│   │   └── constants.js
-│
-│
-│   ├── theme/
-│   │   ├── colors.js
-│   │   ├── typography.js
-│   │   └── spacing.js
-│
-│
-│   └── types/              # optional even in JS (for JSDoc)
-│       ├── itineraryTypes.js
-│       ├── userTypes.js
-│       └── reviewTypes.js
-│
-│
-├── App.js
-├── app.json
-├── babel.config.js
-├── metro.config.js
-└── package.json
+â”‚
+â”œâ”€â”€ app/                    # Expo Router screens
+â”‚
+â”‚   â”œâ”€â”€ (tabs)/
+â”‚   â”‚   â”œâ”€â”€ index.jsx       # Home
+â”‚   â”‚   â”œâ”€â”€ trips.jsx
+â”‚   â”‚   â”œâ”€â”€ create-trip.jsx
+â”‚   â”‚   â””â”€â”€ profile.jsx
+â”‚
+â”‚   â”œâ”€â”€ itinerary/
+â”‚   â”‚   â””â”€â”€ [tripId].jsx
+â”‚
+â”‚   â”œâ”€â”€ map/
+â”‚   â”‚   â””â”€â”€ map-view.jsx
+â”‚
+â”‚   â”œâ”€â”€ auth/
+â”‚   â”‚   â”œâ”€â”€ login.jsx
+â”‚   â”‚   â””â”€â”€ signup.jsx
+â”‚
+â”‚   â””â”€â”€ _layout.jsx         # navigation layout
+â”‚
+â”‚
+â”œâ”€â”€ src/
+â”‚
+â”‚   â”œâ”€â”€ assets/
+â”‚   â”‚   â”œâ”€â”€ images/
+â”‚   â”‚   â”œâ”€â”€ icons/
+â”‚   â”‚   â””â”€â”€ illustrations/
+â”‚
+â”‚   â”œâ”€â”€ components/
+â”‚   â”‚
+â”‚   â”‚   â”œâ”€â”€ common/
+â”‚   â”‚   â”‚   â”œâ”€â”€ Button.jsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ Card.jsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ Loader.jsx
+â”‚   â”‚   â”‚   â””â”€â”€ Modal.jsx
+â”‚   â”‚
+â”‚   â”‚   â”œâ”€â”€ map/
+â”‚   â”‚   â”‚   â”œâ”€â”€ MapView.jsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ RoutePolyline.jsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ PlaceMarker.jsx
+â”‚   â”‚   â”‚   â””â”€â”€ UserLocationMarker.jsx
+â”‚   â”‚
+â”‚   â”‚   â”œâ”€â”€ itinerary/
+â”‚   â”‚   â”‚   â”œâ”€â”€ PlaceCard.jsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ RestaurantSuggestion.jsx
+â”‚   â”‚   â”‚   â”œâ”€â”€ ATMSuggestion.jsx
+â”‚   â”‚   â”‚   â””â”€â”€ TripProgressBar.jsx
+â”‚   â”‚
+â”‚   â”‚   â””â”€â”€ reviews/
+â”‚   â”‚       â”œâ”€â”€ ReviewCard.jsx
+â”‚   â”‚       â””â”€â”€ TipCard.jsx
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ services/
+â”‚   â”‚
+â”‚   â”‚   â”œâ”€â”€ api/
+â”‚   â”‚   â”‚   â””â”€â”€ apiClient.js
+â”‚   â”‚
+â”‚   â”‚   â”œâ”€â”€ maps/
+â”‚   â”‚   â”‚   â””â”€â”€ googleMapsService.js
+â”‚   â”‚
+â”‚   â”‚   â”œâ”€â”€ itinerary/
+â”‚   â”‚   â”‚   â””â”€â”€ itineraryService.js
+â”‚   â”‚
+â”‚   â”‚   â””â”€â”€ auth/
+â”‚   â”‚       â””â”€â”€ firebaseAuthService.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ store/
+â”‚   â”‚   â”œâ”€â”€ tripStore.js
+â”‚   â”‚   â””â”€â”€ userStore.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ hooks/
+â”‚   â”‚   â”œâ”€â”€ useLocation.js
+â”‚   â”‚   â””â”€â”€ useTripProgress.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ utils/
+â”‚   â”‚   â”œâ”€â”€ distance.js
+â”‚   â”‚   â”œâ”€â”€ timeFormatter.js
+â”‚   â”‚   â””â”€â”€ constants.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ theme/
+â”‚   â”‚   â”œâ”€â”€ colors.js
+â”‚   â”‚   â”œâ”€â”€ typography.js
+â”‚   â”‚   â””â”€â”€ spacing.js
+â”‚
+â”‚
+â”‚   â””â”€â”€ types/              # optional even in JS (for JSDoc)
+â”‚       â”œâ”€â”€ itineraryTypes.js
+â”‚       â”œâ”€â”€ userTypes.js
+â”‚       â””â”€â”€ reviewTypes.js
+â”‚
+â”‚
+â”œâ”€â”€ App.js
+â”œâ”€â”€ app.json
+â”œâ”€â”€ babel.config.js
+â”œâ”€â”€ metro.config.js
+â””â”€â”€ package.json
 
 
 
 server/
-│
-├── src/
-│
-│   ├── config/
-│   │   ├── db.js
-│   │   ├── firebase.js
-│   │   └── env.js
-│
-│
-│   ├── controllers/
-│   │   ├── itineraryController.js
-│   │   ├── placesController.js
-│   │   ├── reviewController.js
-│   │   └── userController.js
-│
-│
-│   ├── routes/
-│   │   ├── itineraryRoutes.js
-│   │   ├── placesRoutes.js
-│   │   ├── reviewRoutes.js
-│   │   └── userRoutes.js
-│
-│
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Itinerary.js
-│   │   ├── PlaceReview.js
-│   │   └── TripProgress.js
-│
-│
-│   ├── services/
-│   │   ├── itineraryService.js
-│   │   ├── googleMapsService.js
-│   │   ├── optimizationService.js
-│   │   └── recommendationService.js
-│
-│
-│   ├── algorithms/
-│   │   ├── tspNearestNeighbor.js
-│   │   ├── twoOptOptimization.js
-│   │   └── multiDayPlanner.js
-│
-│
-│   ├── middleware/
-│   │   ├── authMiddleware.js
-│   │   └── errorHandler.js
-│
-│
-│   ├── utils/
-│   │   ├── distanceCalculator.js
-│   │   ├── timeEstimator.js
-│   │   └── logger.js
-│
-│
-│   └── app.js
-│
-├── server.js
-└── package.json
+â”‚
+â”œâ”€â”€ src/
+â”‚
+â”‚   â”œâ”€â”€ config/
+â”‚   â”‚   â”œâ”€â”€ db.js
+â”‚   â”‚   â”œâ”€â”€ firebase.js
+â”‚   â”‚   â””â”€â”€ env.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ controllers/
+â”‚   â”‚   â”œâ”€â”€ itineraryController.js
+â”‚   â”‚   â”œâ”€â”€ placesController.js
+â”‚   â”‚   â”œâ”€â”€ reviewController.js
+â”‚   â”‚   â””â”€â”€ userController.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ routes/
+â”‚   â”‚   â”œâ”€â”€ itineraryRoutes.js
+â”‚   â”‚   â”œâ”€â”€ placesRoutes.js
+â”‚   â”‚   â”œâ”€â”€ reviewRoutes.js
+â”‚   â”‚   â””â”€â”€ userRoutes.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ models/
+â”‚   â”‚   â”œâ”€â”€ User.js
+â”‚   â”‚   â”œâ”€â”€ Itinerary.js
+â”‚   â”‚   â”œâ”€â”€ PlaceReview.js
+â”‚   â”‚   â””â”€â”€ TripProgress.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ services/
+â”‚   â”‚   â”œâ”€â”€ itineraryService.js
+â”‚   â”‚   â”œâ”€â”€ googleMapsService.js
+â”‚   â”‚   â”œâ”€â”€ optimizationService.js
+â”‚   â”‚   â””â”€â”€ recommendationService.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ algorithms/
+â”‚   â”‚   â”œâ”€â”€ tspNearestNeighbor.js
+â”‚   â”‚   â”œâ”€â”€ twoOptOptimization.js
+â”‚   â”‚   â””â”€â”€ multiDayPlanner.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ middleware/
+â”‚   â”‚   â”œâ”€â”€ authMiddleware.js
+â”‚   â”‚   â””â”€â”€ errorHandler.js
+â”‚
+â”‚
+â”‚   â”œâ”€â”€ utils/
+â”‚   â”‚   â”œâ”€â”€ distanceCalculator.js
+â”‚   â”‚   â”œâ”€â”€ timeEstimator.js
+â”‚   â”‚   â””â”€â”€ logger.js
+â”‚
+â”‚
+â”‚   â””â”€â”€ app.js
+â”‚
+â”œâ”€â”€ server.js
+â””â”€â”€ package.json

@@ -7,7 +7,7 @@ function isServerlessRuntime() {
 function getUploadRootDir() {
   if (isServerlessRuntime()) {
     // /tmp is the writable location in serverless runtimes like Vercel.
-    return path.resolve('/tmp', 'tripzo');
+    return path.resolve('/tmp', 'routezy');
   }
   return process.cwd();
 }
